@@ -27,13 +27,6 @@ template<typename T>
 inline bool	le(T a,T b, T c) {return a<=b && b<=c;};
 inline bool	fbxIsSymbolStart(char c)	{return le('a',c,'z') || le('A',c,'Z')|| c=='_';}
 inline bool	fbxIsSymbolCont(char c)	{return	 fbxIsSymbolStart(c)||le('0',c,'9');}
-inline bool	fbxIsNumberStart(std::ifstream& src)
-{
-    //SkipWhitespace(src);
-    char c0=0,c1=0; src>>c0; c1=src.peek ();  src.unget();
-    return	(c0=='-' && (c1=='.' || le('0',c1,'9')))
-        || le('0',c0,'9');
-}
 template<int N>
 class	FbxString : public std::array<char,N> {
 public:
@@ -59,7 +52,7 @@ template<typename T>
 inline bool	IsWithin(T c, T lo, T hi) {return c>=lo && c<=hi;}
 inline bool	IsSymbolStart(char c){return IsWithin(c,'a','z') || IsWithin(c,'A','Z')|| c=='_';}
 inline bool	IsSymbolCont(char c){return	 IsSymbolStart(c)||IsWithin(c,'0','9');}
-inline bool	IsNumberStart(std::ifstream& src)
+inline bool	IsNumber(std::ifstream& src)
 {
     char c0=0,c1=0; src>>c0; c1=src.peek ();  src.unget();
     return	(c0=='-' && (c1=='.' || IsWithin(c1,'0','9')))
@@ -100,9 +93,18 @@ void	ExitBlock(std::ifstream& src);
 void	SkipBlock(std::ifstream& src);
 void	SkipWhitespace(std::ifstream& src);
 
+inline bool	fbxIsNumber(std::ifstream& src)
+{
+    SkipWhitespace(src);
+    while (src.peek()==',') src.get();
+    char c0=0,c1=0; src>>c0; c1=src.peek ();  src.unget();
+    return	(c0=='-' && (c1=='.' || le('0',c1,'9')))
+        || le('0',c0,'9');
+}
+
 template<typename T>
 T Load(std::ifstream& src) {
-    T	r; src>> r; return r;
+    T	r; src>> r; fbxSkipComma(src); return r;
 }
 
 extern bool	EnterBlock(FILE* fp);

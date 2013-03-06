@@ -29,6 +29,7 @@ inline bool	fbxIsSymbolStart(char c)	{return le('a',c,'z') || le('A',c,'Z')|| c=
 inline bool	fbxIsSymbolCont(char c)	{return	 fbxIsSymbolStart(c)||le('0',c,'9');}
 inline bool	fbxIsNumberStart(std::ifstream& src)
 {
+    //SkipWhitespace(src);
     char c0=0,c1=0; src>>c0; c1=src.peek ();  src.unget();
     return	(c0=='-' && (c1=='.' || le('0',c1,'9')))
         || le('0',c0,'9');
@@ -78,7 +79,7 @@ extern int	ReadInt(FILE* fp);
 extern float	ReadFloat(FILE* fp);
 extern void	ReadLine(FILE* fp, char* line, int maxlen);
 extern void	SkipLine(std::ifstream& src);
-extern bool	SkipComma(std::ifstream& src);
+extern bool	fbxSkipComma(std::ifstream& src);
 extern bool ReadString(FILE* fp, char* txt, int maxlan);
 extern bool	ReadToken(FILE*, char* tok, int maxLen);
 extern void	ExitBlock(FILE* fp);
@@ -112,6 +113,7 @@ bool	ReadQuotedString(T& s, std::ifstream& f)
     char c; f>>c;
     if (c!='\"') { f.unget(); return false;}
     f.getline((char*)&s, sizeof(T)-1, '\"');
+    fbxSkipComma(f);
     return	true;
 }
 

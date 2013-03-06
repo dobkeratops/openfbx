@@ -1,6 +1,6 @@
-#include "nodes.h"
+#include "variant.h"
 
-Node::Node()
+Variant::Variant()
 {
 
 

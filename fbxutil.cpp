@@ -181,7 +181,7 @@ bool	EnterBlock(
     return true;
 }
 
-bool	SkipComma(std::ifstream& src)
+bool	fbxSkipComma(std::ifstream& src)
 {
     char c; src>>c; if (c==',') return true; else src.unget(); return false;
 }

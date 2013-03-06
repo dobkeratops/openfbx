@@ -39,7 +39,6 @@ void
 LoadFbxAnimCurves(FbxScene* scn, ifstream& src, FbxScene::Take* dst, const char* mdlName, const char* channelName)
 {
     fbx_printf("load chanel %s for model %s{\n", channelName, mdlName);
-	FbxHeader hdr;
 
 	int	keyCount=-1;
     for (FbxSubBlocks hdr(src);hdr.get();)
@@ -284,28 +283,6 @@ LoadFbxTakes(FbxScene* scn, ifstream& src)
     }
 	fbx_printf("debug, test parsing of LoadFbxTakes");
 }
-
-
-
-/*
-void	LoadFbxTake(Fbx* scn, ifstream& src)
-{
-	auto	cycle = new Fbx::AnimCycle;
-	scn->animCycles.push_back(cycle);
-    ReadQuotedString(cycle->name, src);
-	EnterBlock(src);
-	for (FbxHeader hdr ;hdr.LoadNext(src); ) {
-
-	}
-	ExitBlock(src);
-}
-*/
-
-/*	template<typename OBJECT>
-	struct	PropertyDef { const char* propertyName; int dim; float OBJECT::*offset; };
-
-	static	PropertyDef<Model>	s_ModelProperties[];
-*/
 
 
 

@@ -45,7 +45,7 @@ LoadFbxAnimCurves(FbxScene* scn, FbxStream& src, FbxScene::Take* dst, const char
 		// channel accumulates sub-channel name
 		if (hdr=="Channel:") {
 			FbxString<245> subn;
-            ReadQuotedString(subn,src);
+            ReadString(subn,src);
 			std::string chn;
 			chn=channelName;
 			if (strlen(channelName)>0)
@@ -74,10 +74,9 @@ LoadFbxAnimCurves(FbxScene* scn, FbxStream& src, FbxScene::Take* dst, const char
 			{
                 while (fbxIsNumber(src))
 				{
-                    double t; double f; char l;
-                    t=Load<float>(src);
-                    f=Load<float>(src);
-                    l=Load<char>(src);
+                    auto t=Read<float>(src);
+                    auto f=Read<float>(src);
+                    auto l=Read<char>(src);
 
                     fbx_printf("channel data:\t%lf\t%lf\t%c\n", t,f,l);
                     newCurve.points.push_back(FbxScene::FCurve::tvalue(t,f));
@@ -180,6 +179,13 @@ void    fbx_printf(const FbxMath::Matrix& m) {
 	}
 	fbx_printf("]\n");
 }
+void fbxBlockUnused(const FbxHeader& sb) {
+    printf("unused block %s\n",sb.c_str());
+}
+void fbxBlockUnused(const FbxSubBlocks& sb) {
+    fbxBlockUnused(sb.hdr);
+}
+
 template<int N>
 void	fbx_printf(const FbxString<N>& str) {
 	fbx_printf(&str[0]);
@@ -194,12 +200,8 @@ inline void	write(IWriter* dst, const FbxScene* scn) {scn->Write(dst);};
 
 
 
-FbxScene::Vector3	LoadVector3(FbxStream& src) {
-    //char comma;
-    //float x,y,z;
-    //src >> x  >> comma >> y >> comma >> z;
-    //fbxSkipComma(src);
-    float x,y,z; x=Load<float>(src); y=Load<float>(src); z=Load<float>(src);
+FbxScene::Vector3	ReadVector3(FbxStream& src) {
+    auto x=Read<float>(src), y=Read<float>(src), z=Read<float>(src);
     return {{x,y,z}};
 }
 
@@ -215,9 +217,9 @@ void    LoadFbxConnections(FbxScene* scn, FbxStream& file)
         {
 
             FbxString<128> type,from,to;
-            ReadQuotedString(type,file);
-            ReadQuotedString(from,file);
-            ReadQuotedString(to,file);
+            ReadString(type,file);
+            ReadString(from,file);
+            ReadString(to,file);
             auto fromMdl = scn->GetModel(from);
             if (!(type=="OO"))
                 continue;
@@ -240,7 +242,8 @@ void    LoadFbxConnections(FbxScene* scn, FbxStream& file)
 			// we might have made assumptions on deformer connection from the names
 	
             fbx_printf("Connected(%s)\t%s\t->\t%s\n", type.c_str(), from.c_str(), to.c_str());
-        }
+        } else
+            fbxBlockUnused(hdr);
     };
     fbx_printf("Connections}");
 }
@@ -251,32 +254,22 @@ LoadFbxTakes(FbxScene* scn, FbxStream& src)
 {
     for (FbxSubBlocks hdr(src); hdr.get();)
 	{
-        fbx_printf("takes-header:%s\n",hdr.hdr.c_str());
-
-		if (!(hdr=="Take:")) 
-			continue;
+        if (!(hdr=="Take:"))  {
+            fbxBlockUnused(hdr); continue;
+        }
         auto* take = new FbxScene::Take;
 		scn->takes.push_back(take);
-        ReadQuotedString(take->name,src);
-		fbx_printf("take->name %s{", take->name.c_str());
+        ReadString(take->name,src);
 		{
-            fbx_printf("1\n");
             for (FbxSubBlocks hdr(src); hdr.get();) {
-				fbx_printf("takes-subheader:%s\n",hdr.c_str());
 				if (hdr=="Model:") {
-					fbx_printf("loading\n");
 					FbxString<256>	mdlName;
-                    ReadQuotedString(mdlName,src);
-					fbx_printf("name=%s\n",mdlName.c_str());
+                    ReadString(mdlName,src);
 					LoadFbxAnimCurves(scn, src, take, mdlName.c_str(), "");
-					fbx_printf("anim curves loaded\n");
 				}
-				fbx_printf("takes-subheader next\n");
             }
-			fbx_printf("Take}\n");
 		}
         take->Setup();
-		fbx_printf("}%s", take->name.c_str());
     }
 	fbx_printf("debug, test parsing of LoadFbxTakes");
 }
@@ -292,23 +285,22 @@ void	LoadFbxModelProperties(FbxScene* scn, FbxScene::Model* mdl, FbxStream & src
 		if (hdr=="Property:")
 		{
 			FbxString<256> name, type, unknown;
-            ReadQuotedString(name,src);
-            ReadQuotedString(type, src);
-            ReadQuotedString(unknown,src);
+            ReadString(name,src);
+            ReadString(type, src);
+            ReadString(unknown,src);
 			if (name=="Lcl Translation") {
-                mdl->localTranslate = LoadVector3(src);
+                mdl->localTranslate = ReadVector3(src);
 
 			} else
 			if (name=="Lcl Rotation") {
-                mdl->localRotate = LoadVector3(src);
+                mdl->localRotate = ReadVector3(src);
 			} else
 			if (name=="Lcl Scaling") {
-                mdl->localScale = LoadVector3(src);
+                mdl->localScale = ReadVector3(src);
 			}
 
 			// else - parameter table for defaults.
-
-		}
+        }else fbxBlockUnused(hdr);
 	}
 	mdl->localRotate*=(2.f*M_PI/360.f);
 
@@ -326,47 +318,43 @@ LoadFbxModel(FbxScene* pscn, FbxScene::Model* mdl, const char modelName[], const
 		fbx_dumpline(src);
 		if (hdr=="Properties60:") {
 			LoadFbxModelProperties(pscn,mdl, src);
-		}
+        } else
 		if (hdr=="Vertices:")
 		{
 			if (!mesh) mesh=pscn->CreateMeshForModel(mdl);
 			int	vertexIndex=0;
             while (fbxIsNumber(src))
 			{
-                FbxScene::Vertex	v;
-				v=LoadVector3(src);
+                FbxScene::Vertex	v=ReadVector3(src);
 				mesh->vertices.push_back( v);
 				vertexIndex++;
 			}
-		}
+        } else
 		if (hdr=="PolygonVertexIndex:")
 		{
 			int	triIndex=0;
             while (fbxIsNumber(src))
-			{
-				int	 pv0,pv1; char c;
-                pv0=Load<int>(src); pv1=Load<int> (src);
-				int	pvn;
-                do
-                {
-                    if (!fbxIsNumber(src)) break;
+            {
+                auto pv0=Read<int>(src), pv1=Read<int> (src);
+                int pvn;
+                while (fbxIsNumber(src)) {
                     //src >> pvn;fbxSkipComma(src);
-                    pvn=Load<int>(src);
+                    auto pvn=Read<int>(src);
 					int	pvnn = pvn>=0?pvn:(-pvn-1);
                     mesh->triangles.push_back( FbxScene::Triangle(pv0,pv1,pvnn) );
 					pv1=pvnn;
-
-                } while (pvn>=0);
+                    if (pvn<0)
+                        break;
+                }
 			}
-		}
+        }else fbxBlockUnused(hdr);
 	}
 }
 
 template<typename T>
 void	LoadFbxNumericArray(vector<T>*	dst, FbxStream& src)
 {   while(fbxIsNumber(src)) {
-        dst->push_back(Load<T>(src));
-        fbxSkipComma(src);
+        dst->push_back(Read<T>(src));
     }
     dst->shrink_to_fit();
 }
@@ -419,6 +407,7 @@ void	LoadFbxDeformer(FbxScene* scn, const char* modelName, const char* modelType
 		else if (hdr=="Weights:") {
 			LoadFbxNumericArray<float>(&weights, src);
 		}
+        else fbxBlockUnused(hdr);
 	}
 	if (indices.size()>0)
 	{
@@ -438,25 +427,24 @@ LoadFbxObjects(FbxScene* scn, FbxStream& src)
 
     for (FbxSubBlocks hdr(src); hdr.get(); )
 	{
-		fbx_printf("%s\n",hdr.c_str());
 		if (hdr=="Model:")
 		{
 			FbxString<512> modelName, modelType;
-            ReadQuotedString(modelName, src);
-            ReadQuotedString(modelType, src);
+            ReadString(modelName, src);
+            ReadString(modelType, src);
 			fbx_printf("Load model %s %s {\n",modelName.c_str(),modelType.c_str());
             auto	mdl = new FbxScene::Model;
 			scn->allModels.push_back(mdl);
 			LoadFbxModel(scn, mdl, modelName, modelType, src);
 			fbx_printf("} load model %s %s done\n",modelName.c_str(),modelType.c_str() );
 		}
-		 else if (hdr=="Deformer:")
+        else if (hdr=="Deformer:")
 		{
             FbxString<256> modelName, modelType;
-            ReadQuotedString(modelName,src);
-            ReadQuotedString(modelType,src);
+            ReadString(modelName,src);
+            ReadString(modelType,src);
 			LoadFbxDeformer(scn,modelName, modelType, src);
-		}
+        } else fbxBlockUnused(hdr);
 
 	}
 	fbx_printf("loadfbxobjects End\n");
@@ -475,6 +463,7 @@ LoadFbx(FbxScene*   scn, ifstream& file)
 			LoadFbxConnections(scn, src);
         else if (hdr=="Takes:")
 			LoadFbxTakes(scn,src);
+        else fbxBlockUnused(hdr);
 	}
 	scn->Finalize();
 }

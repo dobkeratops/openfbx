@@ -103,14 +103,14 @@ inline bool	fbxIsNumber(std::ifstream& src)
 }
 
 template<typename T>
-T Load(std::ifstream& src) {
+T Read(std::ifstream& src) {
     T	r; src>> r; fbxSkipComma(src); return r;
 }
 
 extern bool	EnterBlock(FILE* fp);
 extern float ReadFloat2(FILE* fp);
 template<typename T>
-bool	ReadQuotedString(T& s, std::ifstream& f)
+bool	ReadString(T& s, std::ifstream& f)
 {
     char c; f>>c;
     if (c!='\"') { f.unget(); return false;}

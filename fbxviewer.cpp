@@ -199,6 +199,7 @@ void	FbxViewer::Render()
 	float angle2=angle*0.05f+0.5f;
     static float anim_t = 0.f;
     static int take=0;
+
     float maxt = s_pFbxScene->takes[take]->maxt;
     anim_t+=maxt/50.f;
     if (anim_t>maxt) {

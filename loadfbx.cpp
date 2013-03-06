@@ -3,16 +3,36 @@
 using namespace std;
 
 
-void FatalError(const char* ) {
-}
-
-
 class	FbxHeader : public FbxString<256>
 {
 public:
-	FbxHeader() {}
-	bool	LoadNext(ifstream& src);
+    FbxHeader() {}
+    bool	LoadNext(ifstream& src);
+    FbxHeader&operator=(const char*src) { strncpy(&this->at(0),src,256); return *this;}
 };
+
+class   FbxSubBlocks {
+public:
+    ifstream*   pf;
+    FbxSubBlocks(ifstream& file) {
+        pf=&file;
+        EnterBlock(*pf);
+    }
+    FbxHeader   hdr;
+    const char* c_str() const { return hdr.c_str();}
+    bool operator==(const char* txt) {return hdr==txt;}
+    bool get(){
+        if (pf->eof()) return false;
+        return hdr.LoadNext(*pf);
+    }
+    ~FbxSubBlocks(){
+        ExitBlock(*pf);
+    }
+};
+
+void FatalError(const char* ) {
+}
+
 
 
 void
@@ -20,10 +40,9 @@ LoadFbxAnimCurves(FbxScene* scn, ifstream& src, FbxScene::Take* dst, const char*
 {
     fbx_printf("load chanel %s for model %s{\n", channelName, mdlName);
 	FbxHeader hdr;
-	EnterBlock(src);
 
 	int	keyCount=-1;
-	while (hdr.LoadNext(src)) 
+    for (FbxSubBlocks hdr(src);hdr.get();)
 	{
 		// channel accumulates sub-channel name
 		if (hdr=="Channel:") {
@@ -75,7 +94,7 @@ LoadFbxAnimCurves(FbxScene* scn, ifstream& src, FbxScene::Take* dst, const char*
 		}
 	}
     fbx_printf("}\n");
-	ExitBlock(src);
+//	ExitBlock(src);
 }
 
 
@@ -86,6 +105,7 @@ FbxHeader::LoadNext(ifstream& src)
 	char* header=&hdr->at(0);
 	int	size=sizeof(*hdr);
 		fbx_dumpline(src);
+    *this="";
 	while (!src.eof())
 	{
 		auto c=src.peek();
@@ -187,13 +207,14 @@ FbxScene::Vector3	LoadVector3(ifstream& src) {
     return {{x,y,z}};
 }
 
+
+
 void    LoadFbxConnections(FbxScene* scn, ifstream& file)
 {
     fbx_printf("Connections{");
-    EnterBlock(file);
-	FbxHeader	hdr;
-    while (hdr.LoadNext(file))    {
 
+    for (FbxSubBlocks hdr(file); hdr.get();)
+    {
         if (hdr=="Connect:")
         {
 
@@ -225,8 +246,6 @@ void    LoadFbxConnections(FbxScene* scn, ifstream& file)
             fbx_printf("Connected(%s)\t%s\t->\t%s\n", type.c_str(), from.c_str(), to.c_str());
         }
     };
-
-    ExitBlock(file);
     fbx_printf("Connections}");
 }
 
@@ -234,10 +253,9 @@ void    LoadFbxConnections(FbxScene* scn, ifstream& file)
 void
 LoadFbxTakes(FbxScene* scn, ifstream& src)
 {
-	EnterBlock(src); FbxHeader hdr;
-	while (hdr.LoadNext(src)) 
+    for (FbxSubBlocks hdr(src); hdr.get();)
 	{
-		fbx_printf("takes-header:%s\n",hdr.c_str());
+        fbx_printf("takes-header:%s\n",hdr.hdr.c_str());
 
 		if (!(hdr=="Take:")) 
 			continue;
@@ -246,9 +264,8 @@ LoadFbxTakes(FbxScene* scn, ifstream& src)
         ReadQuotedString(take->name,src);
 		fbx_printf("take->name %s{", take->name.c_str());
 		{
-			fbx_printf("1\n");
-			EnterBlock(src); FbxHeader hdr;
-			while (hdr.LoadNext(src)) {
+            fbx_printf("1\n");
+            for (FbxSubBlocks hdr(src); hdr.get();) {
 				fbx_printf("takes-subheader:%s\n",hdr.c_str());
 				if (hdr=="Model:") {
 					fbx_printf("loading\n");
@@ -259,14 +276,12 @@ LoadFbxTakes(FbxScene* scn, ifstream& src)
 					fbx_printf("anim curves loaded\n");
 				}
 				fbx_printf("takes-subheader next\n");
-			}
-			ExitBlock(src);
+            }
 			fbx_printf("Take}\n");
 		}
         take->Setup();
 		fbx_printf("}%s", take->name.c_str());
-	}
-	ExitBlock(src);
+    }
 	fbx_printf("debug, test parsing of LoadFbxTakes");
 }
 
@@ -296,11 +311,9 @@ void	LoadFbxTake(Fbx* scn, ifstream& src)
 
 void	LoadFbxModelProperties(FbxScene* scn, FbxScene::Model* mdl, ifstream & src)
 {
-	EnterBlock(src);
     for (auto pm=FbxScene::Model::s_Properties; pm->name; pm++)
 		fbx_printf("%s", pm->name);
-	FbxHeader	hdr;
-	while (hdr.LoadNext(src))
+    for (FbxSubBlocks hdr(src); hdr.get();)
 	{
 		if (hdr=="Property:")
 		{
@@ -327,17 +340,14 @@ void	LoadFbxModelProperties(FbxScene* scn, FbxScene::Model* mdl, ifstream & src)
 
 	mdl->CalcLocalMatrixFromSRT();
 	fbx_printf(mdl->localMatrix);
-	ExitBlock(src);
 }
 
 void
 LoadFbxModel(FbxScene* pscn, FbxScene::Model* mdl, const char modelName[], const char modelType[], ifstream& src)
 {
     mdl->name = modelName;
-	EnterBlock(src);
-	FbxHeader	hdr;
     FbxScene::FbxMesh*	mesh=0;
-	while (hdr.LoadNext(src))
+    for (FbxSubBlocks hdr(src); hdr.get();)
 	{
 		fbx_dumpline(src);
 		if (hdr=="Properties60:") {
@@ -375,8 +385,6 @@ LoadFbxModel(FbxScene* pscn, FbxScene::Model* mdl, const char modelName[], const
 			}
 		}
 	}
-
-	ExitBlock(src);
 }
 
 template<typename T>
@@ -429,8 +437,7 @@ void	LoadFbxDeformer(FbxScene* scn, const char* modelName, const char* modelType
 	}
 	boneMdl->isDeformer=true;
 
-	EnterBlock(src);
-	for (FbxHeader	hdr; hdr.LoadNext(src);)
+    for (FbxSubBlocks hdr(src); hdr.get();)
 	{
 		if (hdr=="Indexes:")  {
 			LoadFbxNumericArray<int>(&indices, src);
@@ -447,18 +454,15 @@ void	LoadFbxDeformer(FbxScene* scn, const char* modelName, const char* modelType
 		{
 			mesh->weightMap[indices[i]].add(boneIndex, weights[i]);
 		}
-	}
-	ExitBlock(src);
+    }
 }
 
 void
 LoadFbxObjects(FbxScene* scn, ifstream& src)
 {
-	EnterBlock(src);
 	fbx_printf("load fbx objects Begin\n");
 
-	FbxHeader	hdr;
-	while (!src.eof() && hdr.LoadNext(src))
+    for (FbxSubBlocks hdr(src); hdr.get(); )
 	{
 		fbx_printf("%s\n",hdr.c_str());
 		if (hdr=="Model:")
@@ -483,20 +487,19 @@ LoadFbxObjects(FbxScene* scn, ifstream& src)
 
 	}
 	fbx_printf("loadfbxobjects End\n");
-	ExitBlock(src);
+
 }
 
 void
 LoadFbx(FbxScene*   scn, ifstream& src)
 {
-	FbxHeader	hdr;
-	while (!src.eof() && hdr.LoadNext(src))
+    for (FbxHeader hdr; hdr.LoadNext(src);)
 	{
 		if (hdr=="Objects:")
 			LoadFbxObjects(scn, src);
 		else if (hdr=="Connections:")
 			LoadFbxConnections(scn, src);
-		else if (hdr=="Takes:")
+        else if (hdr=="Takes:")
 			LoadFbxTakes(scn,src);
 	}
 	scn->Finalize();

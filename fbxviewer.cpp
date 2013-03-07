@@ -1,6 +1,7 @@
 #include "fbxviewer.h"
 using namespace std;
 
+#ifdef FBXVIEWER_MAIN
 int	FbxViewer::s_PermuteSrt=21;
 
 void	FbxViewer::glVertex(const Vertex& v)
@@ -46,7 +47,6 @@ void	FbxViewer::JointDraw(const Matrix& parentMat, const Matrix& mat,float s)
     MatrixDraw(mat,s);
 }
 
-
 void	FbxViewer::DrawPoint(const Vector3& c, float s) {
 	glBegin(GL_LINES);
 	glColor3f(0.25f, 0.75f,0.75f);
@@ -73,7 +73,7 @@ void	FbxViewer::MeshDrawWeightMap(const FbxScene* scn, const Model* mdl, const F
         int	k;
         for (k=0; k<3; k++)
         {
-            int	vi=tri.at(k);
+            int	vi=tri.vertex[k];
             Vector4	weightColor={{0.f,0.f,0.f,0.f}};
             int	bii;
             for (bii=0; bii<msh->weightMap[vi].size(); bii++) {
@@ -106,8 +106,8 @@ void	FbxViewer::MeshDrawWire(const FbxScene* scn, const Model* mdl, const FbxMes
 		int	k;
 		for (k=0; k<3; k++)
 		{
-            int	vs=tri.at(k);
-            int	ve=tri.at((k+1)%3);
+            int	vs=tri.vertex[k];
+            int	ve=tri.vertex[(k+1)%3];
             glVertex( mat * concat(PermuteVertex(msh->vertices[vs]),1.f));
             glVertex( mat * concat(PermuteVertex(msh->vertices[ve]),1.f));
         }
@@ -239,10 +239,11 @@ void	FbxViewer::Render()
     }
 
 	glPushMatrix();
-//	glRotatef(angle,g_Axis[2],g_Axis[1],g_Axis[0]);
-	glRotatef(-90,	1.0,	0.0,	0.0);
+    glRotatef(-90,	1.0,	0.0,	0.0);
     glRotatef(angle,	angle1,	angle2,	1.0);
-	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+    auto ofs=s_pFbxScene->Centre();
+    glTranslatef(-ofs[0],-ofs[1],-ofs[2]);
+    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	glBegin(GL_LINES);
 	glColor3f(1.f,0.f,0.f);
 	glVertex3f(0.f,0.f,0.f);
@@ -263,7 +264,6 @@ void FbxViewer::Idle() {
     glutPostRedisplay();
 }
 
-#ifdef FBXVIEWER_MAIN
 int main(int argc, const char** argv)
 {
 

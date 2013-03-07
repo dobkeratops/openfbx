@@ -20,7 +20,7 @@ float FbxScene::Radius()const
     return sqrt(size|size)*0.5f;
 }
 FBXM::Vector3 FbxScene::Centre() const{
-    auto centre=(extents[0]+extents[1])*0.5f;
+    return (extents[0]+extents[1])*0.5f;
 }
 
 float FbxScene::Model::GetChannel(Channel_t c) const{
@@ -268,10 +268,10 @@ FbxDumpModel(const FbxScene* scn, const FbxScene::Model* mdl, const FbxScene::Ma
 void
 FbxDumpScene(const FbxScene* scn,IWriter* out)
 {
+    out->beginMap();
     out->keyValue("min",scn->extents[0]);
     out->keyValue("max",scn->extents[1]);
     auto    ident=FbxMatrixIdentity();
-    out->beginMap();
     out->keyValue("numRootModels",(int)scn->rootModels.size());
     out->beginKeyValue("modelNames");
     out->beginArray(scn->allModels.size());
@@ -282,6 +282,16 @@ FbxDumpScene(const FbxScene* scn,IWriter* out)
     out->endArray();
     out->endKeyValue();
 
+    {
+        out->beginKeyValue("textureFileNames");
+        out->beginArray(scn->textures.size());
+        for (auto tx:scn->textures) {
+           out->value(tx.filename);
+        }
+        out->endArray();
+        out->endKeyValue();
+    }
+
     for (auto& mp :scn->rootModels)
         FbxDumpModel(scn, mp, ident, 0, out);
 
@@ -291,11 +301,12 @@ FbxDumpScene(const FbxScene* scn,IWriter* out)
 /*Write out what we read in...*/
 void	FbxScene::Triangle::Write(IWriter* out) const {
     out->beginArray(3);
-    out->value((*this)[0]);
-    out->value((*this)[1]);
-    out->value((*this)[2]);
+    out->value(this->vertex[0]);
+    out->value(this->vertex[1]);
+    out->value(this->vertex[2]);
     out->endArray();
 }
+
 void	FbxScene::Quad::Write(IWriter* out) const{
     out->beginArray(4);
     out->value((*this)[0]);
@@ -304,8 +315,6 @@ void	FbxScene::Quad::Write(IWriter* out) const{
     out->value((*this)[3]);
     out->endArray();
 }
-
-
 
 void
 FbxScene::InitCycleEvalBuffer(CycleEvalBuffer& dst)  const

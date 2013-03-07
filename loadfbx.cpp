@@ -30,6 +30,15 @@ public:
     }
 };
 
+template<typename T>
+void	FbxLoadNumericArray(vector<T>&	dst, FbxStream& src)
+{   while(fbxIsNumber(src)) {
+        dst.push_back(Read<T>(src));
+    }
+    dst.shrink_to_fit();
+}
+
+
 void FatalError(const char* ) {
 }
 
@@ -121,7 +130,7 @@ FbxHeader::LoadNext(FbxStream& src)
 					*dst++=c;
 				if (c==':') {
 					*dst++=0;
-                    printf("Read Subblock %s\n",hdr->c_str());
+                    fbx_printf("Read Subblock %s\n",hdr->c_str());
 					return true;
 				}
 			} while (fbxIsSymbolCont(c));
@@ -312,7 +321,9 @@ void	LoadFbxModelProperties(FbxScene* scn, FbxScene::Model* mdl, FbxStream & src
 void
 LoadFbxModel(FbxScene* pscn, FbxScene::Model* mdl, const char modelName[], const char modelType[], FbxStream& src)
 {
+    vector<int> facePerTri;
     mdl->name = modelName;
+    int numPolyVertex=0;
     FbxScene::FbxMesh*	mesh=0;
     for (FbxSubBlocks hdr(src); hdr.get();)
 	{
@@ -334,31 +345,62 @@ LoadFbxModel(FbxScene* pscn, FbxScene::Model* mdl, const char modelName[], const
 		if (hdr=="PolygonVertexIndex:")
 		{
 			int	triIndex=0;
+            int faceIndex=0;
             while (fbxIsNumber(src))
             {
                 auto pv0=Read<int>(src), pv1=Read<int> (src);
+                numPolyVertex=2;
                 int pvn;
                 while (fbxIsNumber(src)) {
                     //src >> pvn;fbxSkipComma(src);
                     auto pvn=Read<int>(src);
 					int	pvnn = pvn>=0?pvn:(-pvn-1);
+                    facePerTri.push_back(triIndex);
                     mesh->triangles.push_back( FbxScene::Triangle(pv0,pv1,pvnn) );
+                    numPolyVertex++;
+                    triIndex++;
 					pv1=pvnn;
                     if (pvn<0)
                         break;
                 }
+                faceIndex++;
 			}
-        }else fbxBlockUnused(hdr);
+        }
+        /*
+        else if (hdr=="LayerElementUV:")
+        {
+            auto layer = Read<int>(src);
+            for (FbxSubBlocks hdr(src);src.get();)
+            {
+                vector<float> uv;
+                vector<int> uvindex;
+                if (hdr=="UV:") {
+                    FbxLoadNumericArray(uv,src);
+                } else if (hdr=="UVIndex:") {
+                    FbxLoadNumericArray(uvindex,src);
+                }else fbxBlockUnused(hdr);
+                // map the UV's into the mesh..
+                // TODO: USE POLYGON VERTEX
+                if (uvindex.size()) {
+                }
+            }
+        }
+        else if (hdr=="LayerElementTexture:")
+        {
+            auto layer = Read<int>(src);
+            for (FbxSubBlocks hdr(src);src.get();)
+            {
+                if (hdr=="UV:") {
+
+                } else if (hdr=="UVIndex:") {
+
+                }else fbxBlockUnused(hdr);
+            }
+        }*/
+        else fbxBlockUnused(hdr);
 	}
 }
 
-template<typename T>
-void	LoadFbxNumericArray(vector<T>*	dst, FbxStream& src)
-{   while(fbxIsNumber(src)) {
-        dst->push_back(Read<T>(src));
-    }
-    dst->shrink_to_fit();
-}
 
 
 #undef TRACE
@@ -403,10 +445,10 @@ void	LoadFbxDeformer(FbxScene* scn, const char* modelName, const char* modelType
     for (FbxSubBlocks hdr(src); hdr.get();)
 	{
 		if (hdr=="Indexes:")  {
-			LoadFbxNumericArray<int>(&indices, src);
+            FbxLoadNumericArray<int>(indices, src);
 		}
 		else if (hdr=="Weights:") {
-			LoadFbxNumericArray<float>(&weights, src);
+            FbxLoadNumericArray<float>(weights, src);
 		}
         else fbxBlockUnused(hdr);
 	}
@@ -419,6 +461,22 @@ void	LoadFbxDeformer(FbxScene* scn, const char* modelName, const char* modelType
 			mesh->weightMap[indices[i]].add(boneIndex, weights[i]);
 		}
     }
+}
+
+void
+LoadFbxTexture(FbxScene* scn, FbxStream& src)
+{
+    FbxString<256> texName,texType;
+    ReadString(texName,src);
+    ReadString(texType,src);
+
+    FbxScene::Texture tx;
+    for (FbxSubBlocks hdr(src); hdr.get(); ){
+        if (hdr=="FileName:") {
+            ReadString(tx.filename,src);
+        }
+    }
+    scn->textures.push_back(tx);
 }
 
 void
@@ -445,11 +503,13 @@ LoadFbxObjects(FbxScene* scn, FbxStream& src)
             ReadString(modelName,src);
             ReadString(modelType,src);
 			LoadFbxDeformer(scn,modelName, modelType, src);
+        } else if (hdr=="Texture:") {
+            LoadFbxTexture(scn,src);
+
         } else fbxBlockUnused(hdr);
 
 	}
 	fbx_printf("loadfbxobjects End\n");
-
 }
 
 void

@@ -6,9 +6,10 @@
 
 
 /*
-translator to structured ascii output
+translator to structured ascii output eg JSON
 */
-struct IWriter {
+class IWriter {
+public:
     //TODO, move to abstract interface.
     FILE* fp;
     IWriter(FILE* _fp) {fp=_fp;seperated=false;}
@@ -29,7 +30,11 @@ struct IWriter {
     void    Seperate() { if (!seperated){fprintf(fp,",");seperated=true;};}
     void	value(int x) { Seperate();fprintf(fp,"%d", x);seperated=false;}
     void	value(float f) { Seperate();fprintf(fp,"%.5f", f);seperated=false;}
-    void	value(const char* str) { Seperate();fprintf(fp,"\"%s\" ", str);seperated=false;}
+    void	value(const char* str) {
+        Seperate();
+        fprintf(fp,"\"%s\" ", str);
+        seperated=false;
+    }
 
     template<typename T>
     void	keyValueArray(const char* key, const std::vector<T>& src) {
@@ -50,7 +55,7 @@ struct IWriter {
     }
 
     template<int N>
-    void	value(const FbxString<N>& str) { fprintf(fp,"\"%s\" ", str.c_str());}
+    void	value(const FbxString<N>& str) { Seperate();fprintf(fp,"\"%s\" ", str.c_str());seperated=false;}
 
 
     template<typename T,int N>
@@ -112,10 +117,12 @@ public:
 	enum RotationOrder_t {
 		RO_XmYZ
 	};
-	struct	Triangle : public std::array<int,3>
+    struct	Triangle //: public std::array<int,3>
 	{
+        std::array<int,3> vertex;
 		Triangle() {};
-		Triangle(int i0,int i1, int i2) { auto &t=*this; t[0]=i0; t[1]=i1; t[2]=i2;}
+        Triangle(int i0,int i1, int i2) { auto &t=*this; t.vertex[0]=i0; t.vertex[1]=i1; t.vertex[2]=i2;}
+        int texId;
 		void	Write(IWriter*) const;
 	};
 	struct	Quad : public std::array<int,4>
@@ -150,6 +157,10 @@ public:
 		FbxMesh() {}
 		void	NormalizeWeightMap();
 	};
+    class Texture {
+    public:
+        FbxString<256> filename;
+    };
 
     class	Model
 	{
@@ -174,10 +185,11 @@ public:
 	};
 
 	std::string	name;
-    std::vector<Model*>	allModels;	// collection owns all models
-    std::vector<Model*>  rootModels;	// heirarchy roots
-	std::vector<FbxMesh>		meshes;
-	std::vector<HrcLink>			hrcLinks;	// parent-child relations, "object-owner"?
+    std::vector<Model*> allModels;	// collection owns all models
+    std::vector<Model*> rootModels;	// heirarchy roots
+    std::vector<FbxMesh>    meshes;
+    std::vector<HrcLink>    hrcLinks;	// parent-child relations, "object-owner"?
+    std::vector<Texture>    textures;
     Extents extents;
 
     Model*	CreateModel() { auto mdl=new Model(); allModels.push_back(mdl); return mdl;}

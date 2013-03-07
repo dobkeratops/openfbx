@@ -9,8 +9,19 @@ void	FbxScene::Finalize()
 		msh.NormalizeWeightMap();
     for (auto& take :this->takes)
         take->Setup();
-}
+    this->extents = FbxExtentsInit();
+    for (auto pModel: this->rootModels)
+        this->UpdateExtents(this->extents,pModel,FbxMatrixIdentity());
 
+}
+float FbxScene::Radius()const
+{
+    auto size=extents[1]-extents[0];
+    return sqrt(size|size)*0.5f;
+}
+FBXM::Vector3 FbxScene::Centre() const{
+    auto centre=(extents[0]+extents[1])*0.5f;
+}
 
 float FbxScene::Model::GetChannel(Channel_t c) const{
 	int ci=c % 3;
@@ -31,6 +42,23 @@ FbxScene::FbxMesh*	FbxScene::CreateMeshForModel(Model*	mdl)
 	auto mesh=fbxAppend(this->meshes,1);
 	return mesh;
 }
+
+void
+FbxScene::UpdateExtents(Extents& dst,const Model* mdl, const Matrix& parentMat)
+{
+    auto worldMat=parentMat* mdl->localMatrix;
+    auto msh=this->GetMeshOfModel(mdl);
+    if (msh){
+        for (auto v:msh->vertices) {
+            auto pos=worldMat * concat(v,1.f);
+            FbxExtentsInclude(dst, FBXM::Vector3({pos[0],pos[1],pos[2]}));
+
+        }
+    }
+    for (auto subMdl:mdl->childModels)
+        UpdateExtents(dst,subMdl,worldMat);
+}
+
 FbxMath::Vector4	FbxScene::s_WeightMapColors[4]= {
     {{1.f,0.0f,0.5f}},
     {{0.5f,1.f,0.f}},
@@ -240,6 +268,8 @@ FbxDumpModel(const FbxScene* scn, const FbxScene::Model* mdl, const FbxScene::Ma
 void
 FbxDumpScene(const FbxScene* scn,IWriter* out)
 {
+    out->keyValue("min",scn->extents[0]);
+    out->keyValue("max",scn->extents[1]);
     auto    ident=FbxMatrixIdentity();
     out->beginMap();
     out->keyValue("numRootModels",(int)scn->rootModels.size());

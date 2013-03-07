@@ -10,9 +10,9 @@ void    FbxMath::EvalSRT(Matrix* dst, const float* ch)
 {
     float rf=(2.f*M_PI/360.f);
     *dst=FbxMatrixSrt(
-            Vector3(  {ch[Transform_S_X],ch[Transform_S_Y],ch[Transform_S_Z]}),
-            Vector3(  {ch[Transform_R_X],ch[Transform_R_Y],ch[Transform_R_Z]}),
-            Vector3(  {ch[Transform_T_X],ch[Transform_T_Y],ch[Transform_T_Z]})
+            Vector3(  {{ch[Transform_S_X],ch[Transform_S_Y],ch[Transform_S_Z]}}),
+            Vector3(  {{ch[Transform_R_X],ch[Transform_R_Y],ch[Transform_R_Z]}}),
+            Vector3(  {{ch[Transform_T_X],ch[Transform_T_Y],ch[Transform_T_Z]}})
             );
 }
 

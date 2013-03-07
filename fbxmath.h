@@ -2,6 +2,8 @@
 #define FBXMATH_H
 
 #include <math.h>
+#include <limits>
+#include <float.h>
 #include <array>
 #include <vector>
 #include <algorithm>
@@ -12,6 +14,7 @@ public:
     typedef std::array<float,3> Vector3;
     typedef std::array<float,4> Vector4;
     typedef std::array<Vector4,4> Matrix;
+    typedef std::array<Vector3,2> Extents;
     enum Channel_t {
         Transform_T_X,
         Transform_T_Y,
@@ -30,11 +33,11 @@ public:
 
 typedef FbxMath FBXM;
 
-
+inline FBXM::Vector3 FbxVector3(float x,float y,float z) {return FBXM::Vector3({{x,y,z}});}
 using namespace std;
 template<typename T> inline array<T,4> concat(const array<T,3>& abc, const T&d) { return {{abc[0],abc[1],abc[2],d}};}
 
-inline FBXM::Vector3 operator*(const FBXM::Vector3& a,float f)  { return {{a[0]*f,a[1]*f,a[2]*f}}; }
+inline FBXM::Vector3 operator*(const FBXM::Vector3& a,float f)  { return FbxVector3(a[0]*f,a[1]*f,a[2]*f); }
 inline FBXM::Vector3 operator+(const FBXM::Vector3& a,const FBXM::Vector3& b)  { return {{a[0]+b[0], a[1]+b[1], a[2]+b[2]}}; }
 inline FBXM::Vector3 operator-(const FBXM::Vector3& a,const FBXM::Vector3& b)  { return {{a[0]-b[0], a[1]-b[1], a[2]-b[2]}}; }
 inline FBXM::Vector3& operator*=(FBXM::Vector3& a,float f)  { a[0]=a[0]*f; a[1]=a[1]*f; a[2]=a[2]*f; return a; }
@@ -63,6 +66,8 @@ inline FBXM::Vector4 FbxAxisX (float fval=1.f) {return {{fval,0.f,0.f,0.f}};}
 inline FBXM::Vector4 FbxAxisY (float fval=1.f) {return {{0.f,fval,0.f,0.f}};}
 inline FBXM::Vector4 FbxAxisZ (float fval=1.f) {return {{0.f,0.f,fval,0.f}};}
 inline FBXM::Vector4 FbxAxisW (float fval=1.f) {return {{0.f,0.f,0.f,fval}};}
+inline FBXM::Vector3 FbxMin(const FBXM::Vector3& a, const FBXM::Vector3& b){    return {{ min(a[0],b[0]),min(a[1],b[1]),min(a[2],b[2]) }};}
+inline FBXM::Vector3 FbxMax(const FBXM::Vector3& a, const FBXM::Vector3 & b){    return {{ max(a[0],b[0]),max(a[1],b[1]),max(a[2],b[2]) }};}
 
 template<int u, int v>
 FBXM::Matrix	FbxMatrixRotate(float angle) {
@@ -86,5 +91,6 @@ FBXM::Matrix   FbxMatrixTranslate(const FBXM::Vector3 trans);
 FBXM::Matrix   FbxMatrixScale(const FBXM::Vector3   scale);
 FBXM::Matrix FbxMatrixSrt(FBXM::Vector3 scale, FBXM::Vector3 rotate, FBXM::Vector3 translate);
 FBXM::Matrix FbxMatrixLookAt(FBXM::Vector3 pos,FBXM::Vector3 fwd,FBXM::Vector3 up);
-
+inline FBXM::Extents FbxExtentsInit() { return {{ {{FLT_MAX,FLT_MAX,FLT_MAX}},{{-FLT_MAX,-FLT_MAX,-FLT_MAX}} }}; };
+inline void FbxExtentsInclude(FBXM::Extents& dst, FBXM::Vector3 vec) { dst[0]=FbxMin(dst[0],vec); dst[1]=FbxMax(dst[1],vec); }
 #endif // FBXMATH_H

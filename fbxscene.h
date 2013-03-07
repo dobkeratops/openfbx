@@ -104,8 +104,6 @@ public:
 		int parent,child;
 	};
 
-
-
     typedef Vector3	 Vertex;
     struct	SRT {
         Vector3	scale,rotate,translate;
@@ -180,6 +178,7 @@ public:
     std::vector<Model*>  rootModels;	// heirarchy roots
 	std::vector<FbxMesh>		meshes;
 	std::vector<HrcLink>			hrcLinks;	// parent-child relations, "object-owner"?
+    Extents extents;
 
     Model*	CreateModel() { auto mdl=new Model(); allModels.push_back(mdl); return mdl;}
     FbxMesh*	CreateMeshForModel(Model* mdl);
@@ -189,6 +188,7 @@ public:
 	int  GetIndexOfModel(const char* mdlName);
 	void	Finalize();
 	static const char*	GetRawModelName(const char* src);	// remove namespace qualifier Model::blah
+    void    UpdateExtents(Extents& ext, const Model* mdl, const Matrix& parent);
 
 	struct	FCurve
     {
@@ -230,6 +230,8 @@ public:
     static const char* s_ChannelNames[];
     static Vector4	s_WeightMapColors[4];
     typedef float Model::*ModelFloatPtr_t;
+    float Radius() const;
+    Vector3 Centre() const;
 };
 void    FbxDumpModel(const FbxScene* scn, const FbxScene::Model* mdl, const FbxMath::Matrix& p);
 void	FbxDumpScene(const FbxScene* scn,IWriter* out) ;

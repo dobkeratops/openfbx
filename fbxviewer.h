@@ -25,7 +25,8 @@ public:
     static void JointDraw(const Matrix& parentMat, const Matrix& mat,float s);
     static void DrawPoint(const Vector3& c, float s);
     static void	DrawPoint(const Vector4& c, float s);
-    static void	MeshDraw(const FbxScene* scn, const Model* mdl, const FbxMesh*msh, const Matrix& mat);
+    static void	MeshDrawWire(const FbxScene* scn, const Model* mdl, const FbxMesh*msh, const Matrix& mat);
+    static void	MeshDrawWeightMap(const FbxScene* scn, const Model* mdl, const FbxMesh*msh, const Matrix& mat);
 
     static void	ModelDrawMeshes(const FbxScene* scn, const Matrix& parentMat, const Model* mdl);
     static void	ModelDrawJoints(const FbxScene* scn, const Matrix& parentMat, const Model* mdl);

@@ -8,4 +8,4 @@ else
 endif
 all:
 	$(CXX) *.cpp -I../ut -I../gfx -DFBXVIEWER_MAIN -o loadfbx $(LDFLAGS)
-	loadfbx data/test.fbx
+	./loadfbx data/test.fbx

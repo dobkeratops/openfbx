@@ -51,39 +51,66 @@ void	FbxViewer::DrawPoint(const Vector3& c, float s) {
 	glBegin(GL_LINES);
 	glColor3f(0.25f, 0.75f,0.75f);
 
-    glVertex( c+Vector3({-s,0,0}) );
-    glVertex( c+Vector3({s,0,0}) );
-    glVertex( c+Vector3({0,-s,0}) );
-    glVertex( c+Vector3({0,s,0}) );
-    glVertex( c+Vector3({0,0,-s}) );
-    glVertex( c+Vector3({0,0,s}) );
+    glVertex( c+Vector3({{-s,0,0}}) );
+    glVertex( c+Vector3({{s,0,0}}) );
+    glVertex( c+Vector3({{0,-s,0}}) );
+    glVertex( c+Vector3({{0,s,0}}) );
+    glVertex( c+Vector3({{0,0,-s}}) );
+    glVertex( c+Vector3({{0,0,s}}) );
 	glEnd();
 } 
 
 void	FbxViewer::DrawPoint(const Vector4& c, float s) {
-    DrawPoint(Vector3({c[0],c[1],c[2]}),s);
+    DrawPoint(Vector3({{c[0],c[1],c[2]}}),s);
+}
+void	FbxViewer::MeshDrawWeightMap(const FbxScene* scn, const Model* mdl, const FbxMesh*msh, const Matrix& mat)
+{
+    int	i;
+    glBegin(GL_TRIANGLES);
+    glColor3f(0.5f,0.5f,0.5f);
+
+    for (auto& tri : msh->triangles) {
+        int	k;
+        for (k=0; k<3; k++)
+        {
+            int	vi=tri.at(k);
+            Vector4	weightColor={{0.f,0.f,0.f,0.f}};
+            int	bii;
+            for (bii=0; bii<msh->weightMap[vi].size(); bii++) {
+                int	bi=msh->weightMap[vi].boneIndex[bii];;
+                weightColor+=scn->allModels[bi]->weightMapColor * msh->weightMap[vi].boneWeight[bii];
+            }
+            glColor3f(weightColor[0],weightColor[1],weightColor[2]);
+            glVertex( mat * concat(PermuteVertex(msh->vertices[vi]),1.f));
+        }
+    }
+    glEnd();
+
+    glBegin(GL_POINTS);
+    glColor3f(1.f,1.f,1.f);
+
+    for (auto& v: msh->vertices) {
+        glVertex(mat *concat(PermuteVertex(v),1.f));
+    }
+    glEnd();
+
 }
 
-void	FbxViewer::MeshDraw(const FbxScene* scn, const Model* mdl, const FbxMesh*msh, const Matrix& mat)
+void	FbxViewer::MeshDrawWire(const FbxScene* scn, const Model* mdl, const FbxMesh*msh, const Matrix& mat)
 {
 	int	i;
-	glBegin(GL_TRIANGLES);
+    glBegin(GL_LINES);
 	glColor3f(0.5f,0.5f,0.5f);
 
-	for (auto& tri : msh->triangles) {
+    for (auto& tri : msh->triangles) {
 		int	k;
 		for (k=0; k<3; k++)
 		{
-			int	vi=tri.at(k);
-            Vector4	weightColor={{0.f,0.f,0.f,0.f}};
-			int	bii;
-			for (bii=0; bii<msh->weightMap[vi].size(); bii++) {
-				int	bi=msh->weightMap[vi].boneIndex[bii];;
-				weightColor+=scn->allModels[bi]->weightMapColor * msh->weightMap[vi].boneWeight[bii];
-			}
-			glColor3f(weightColor[0],weightColor[1],weightColor[2]);
-			glVertex( mat * concat(PermuteVertex(msh->vertices[vi]),1.f));
-		}
+            int	vs=tri.at(k);
+            int	ve=tri.at((k+1)%3);
+            glVertex( mat * concat(PermuteVertex(msh->vertices[vs]),1.f));
+            glVertex( mat * concat(PermuteVertex(msh->vertices[ve]),1.f));
+        }
 	}
 	glEnd();
 
@@ -94,7 +121,6 @@ void	FbxViewer::MeshDraw(const FbxScene* scn, const Model* mdl, const FbxMesh*ms
 		glVertex(mat *concat(PermuteVertex(v),1.f));
 	}
 	glEnd();
-
 }
 
 void	FbxViewer::ModelDrawMeshes(const FbxScene* scn, const Matrix& parentMat, const Model* mdl)
@@ -103,9 +129,14 @@ void	FbxViewer::ModelDrawMeshes(const FbxScene* scn, const Matrix& parentMat, co
     auto  mat = parentMat*mdl->GetLocalMatrix() ;
 
 	auto msh=scn->GetMeshOfModel(mdl);
-	if (msh)
-        MeshDraw(scn, mdl,msh, mat);
+    if (msh) {
+        if (msh->weightMap.size())
+            MeshDrawWeightMap(scn, mdl,msh, mat);
+        else
+            MeshDrawWire(scn, mdl,msh, mat);
 
+
+    }
     for(auto& subMdl : mdl->childModels) ModelDrawMeshes(scn, mat, subMdl);
 
 }
@@ -126,7 +157,7 @@ FbxViewer::DrawCubePoints(float f)
 	float s;
 	for (int i=0; i<8; i++) 
 	{
-        auto pos=FBXM::Vector3 ({(i&1)?f:-f, (i&2)?f:-f, (i&4)?f:-f}) ;
+        auto pos=FBXM::Vector3 ({{(i&1)?f:-f, (i&2)?f:-f, (i&4)?f:-f}}) ;
         DrawPoint( pos, f*0.05);
 	}
 }
@@ -172,10 +203,10 @@ void	FbxViewer::Keyboard(unsigned char key, int, int)
 {
 	switch (key)
 	{
-    case '1': s_Axis=Vector3({1.f,0.f,0.f}); break;
-    case '2': s_Axis=Vector3({0.f,1.f,0.f}); break;
-    case '3': s_Axis=Vector3({0.f,0.f,1.f}); break;
-    case '4': s_Axis=Vector3({0.707f,0.f,.707f}); break;
+    case '1': s_Axis=Vector3({{1.f,0.f,0.f}}); break;
+    case '2': s_Axis=Vector3({{0.f,1.f,0.f}}); break;
+    case '3': s_Axis=Vector3({{0.f,0.f,1.f}}); break;
+    case '4': s_Axis=Vector3({{0.707f,0.f,.707f}}); break;
     case 'q': s_PermuteSrt++; break;
     case 'a': s_PermuteSrt--; break;
     case 'w': s_PermuteSrt+=8; break;
@@ -210,7 +241,7 @@ void	FbxViewer::Render()
 	glPushMatrix();
 //	glRotatef(angle,g_Axis[2],g_Axis[1],g_Axis[0]);
 	glRotatef(-90,	1.0,	0.0,	0.0);
-	glRotatef(angle,	0.0,	0.0,	1.0);
+    glRotatef(angle,	angle1,	angle2,	1.0);
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	glBegin(GL_LINES);
 	glColor3f(1.f,0.f,0.f);
@@ -235,14 +266,6 @@ void FbxViewer::Idle() {
 #ifdef FBXVIEWER_MAIN
 int main(int argc, const char** argv)
 {
-	std::ifstream ft; ft.open("temp.txt");
-	int	p;
-	char c; ft>>c; cout <<c; cout <<"\n";
-	cout << ft.tellg()<<"\n";
-	ft.unget();
-	cout << ft.tellg() << "\n";
-
-	ft.close();
 
 	fbx_printf("fbx loader test:-\n");
     FbxScene	scn;
@@ -273,8 +296,9 @@ int main(int argc, const char** argv)
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glFrustum(-0.1,0.1,-0.1,0.1,0.1,5.f);
-	glTranslatef(0,-1.0, -2.f*0.66);
+    float r=scn.Radius();
+    glFrustum(-0.1,0.1,-0.1,0.1,0.1,r*2.f);
+    glTranslatef(0,-r*0.1f,-r);
 	glMatrixMode(GL_MODELVIEW);
 
 	glutMainLoop();

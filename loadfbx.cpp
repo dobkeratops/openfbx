@@ -121,6 +121,7 @@ FbxHeader::LoadNext(FbxStream& src)
 					*dst++=c;
 				if (c==':') {
 					*dst++=0;
+                    printf("Read Subblock %s\n",hdr->c_str());
 					return true;
 				}
 			} while (fbxIsSymbolCont(c));

@@ -7,5 +7,5 @@ else
 	CXX = clang++ -std=c++11
 endif
 all:
-	$(CXX) *.cpp -I../ut -I../gfx -DFBXVIEWER_MAIN -o bin/loadfbx $(LDFLAGS)
-	bin/loadfbx data/test.fbx
+	$(CXX) *.cpp -I../ut -I../gfx -DFBXVIEWER_MAIN -o loadfbx $(LDFLAGS)
+	loadfbx data/test.fbx

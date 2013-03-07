@@ -25,8 +25,7 @@ public:
         NumChannels
     };
 
-    static void    FbxMath::EvalSRT(Matrix* dst, const float* ch);
-
+    static void    EvalSRT(Matrix* dst, const float* ch);
 };
 
 typedef FbxMath FBXM;

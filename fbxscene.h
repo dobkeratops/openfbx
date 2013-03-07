@@ -35,7 +35,7 @@ struct IWriter {
     void	keyValueArray(const char* key, const std::vector<T>& src) {
         beginKeyValue(key);
         beginArray(src.size());
-        for (auto&n : src) { ::write(this,n); }
+        for (auto&n : src) { value(this,n); }
         endArray();
         endKeyValue();
     }
@@ -44,7 +44,7 @@ struct IWriter {
     void	keyValuePtrArray(const char* key, const std::vector<T>& src) {
         beginKeyValue(key);
         beginArray(src.size());
-        for (auto pn : src) { ::write(this,*pn); }
+        for (auto pn : src) { value(this,*pn); }
         endArray();
         endKeyValue();
     }

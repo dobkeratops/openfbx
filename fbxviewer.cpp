@@ -81,7 +81,7 @@ void	FbxViewer::MeshDrawWeightMap(const FbxScene* scn, const Model* mdl, const F
                 weightColor+=scn->allModels[bi]->weightMapColor * msh->weightMap[vi].boneWeight[bii];
             }
             glColor3f(weightColor[0],weightColor[1],weightColor[2]);
-            glVertex( mat * concat(PermuteVertex(msh->vertices[vi]),1.f));
+            glVertex( mat * concat(PermuteVertex(msh->Vertices[vi]),1.f));
         }
     }
     glEnd();
@@ -89,7 +89,7 @@ void	FbxViewer::MeshDrawWeightMap(const FbxScene* scn, const Model* mdl, const F
     glBegin(GL_POINTS);
     glColor3f(1.f,1.f,1.f);
 
-    for (auto& v: msh->vertices) {
+    for (auto& v: msh->Vertices) {
         glVertex(mat *concat(PermuteVertex(v),1.f));
     }
     glEnd();
@@ -108,8 +108,8 @@ void	FbxViewer::MeshDrawWire(const FbxScene* scn, const Model* mdl, const FbxMes
 		{
             int	vs=tri.vertex[k];
             int	ve=tri.vertex[(k+1)%3];
-            glVertex( mat * concat(PermuteVertex(msh->vertices[vs]),1.f));
-            glVertex( mat * concat(PermuteVertex(msh->vertices[ve]),1.f));
+            glVertex( mat * concat(PermuteVertex(msh->Vertices[vs]),1.f));
+            glVertex( mat * concat(PermuteVertex(msh->Vertices[ve]),1.f));
         }
 	}
 	glEnd();
@@ -117,7 +117,7 @@ void	FbxViewer::MeshDrawWire(const FbxScene* scn, const Model* mdl, const FbxMes
 	glBegin(GL_POINTS);
 	glColor3f(1.f,1.f,1.f);
 
-	for (auto& v: msh->vertices) {
+    for (auto& v: msh->Vertices) {
 		glVertex(mat *concat(PermuteVertex(v),1.f));
 	}
 	glEnd();

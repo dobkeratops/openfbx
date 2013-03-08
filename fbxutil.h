@@ -21,7 +21,7 @@ inline void fbx_printf(const char*,...) { };
 #endif
 
 //typedef FBXM::Matrix FbxMatrix;
-template<typename T> inline T*	fbxAppend(std::vector<T>& list, int newNum) { int oldSize=list.size(); list.resize(oldSize+newNum); return &list[oldSize];}
+template<typename T> inline T*	fbxAppend(std::vector<T>& list, int numToAdd=1) { int oldSize=list.size(); list.resize(oldSize+numToAdd); return &list[oldSize];}
 
 template<typename T>
 inline bool	le(T a,T b, T c) {return a<=b && b<=c;};

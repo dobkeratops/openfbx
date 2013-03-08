@@ -11,6 +11,7 @@
 class FbxMath
 {
 public:
+    typedef std::array<float,2> Vector2;
     typedef std::array<float,3> Vector3;
     typedef std::array<float,4> Vector4;
     typedef std::array<Vector4,4> Matrix;

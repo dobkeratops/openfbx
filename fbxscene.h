@@ -150,13 +150,41 @@ public:
 	class	FbxMesh 
 	{
 	public:
-		std::vector<Vertex>	vertices;
-		std::vector<VertexBoneWeights>	weightMap;
-		std::vector<Triangle>	triangles;
+        class LayerElementUV {
+        public:
+            std::vector<float> UV;
+            std::vector<int>    UVIndex;
+            Vector2& getUV(int index) { return (Vector2&)(UV[index*2]);}
+        };
+        class LayerElementTexture {
+        public:
+            std::vector<int> TextureID;
+        };
+        class LayerElementNormal {
+        public:
+            std::vector<float> Normals;
+            Vector3& getNormal(int index) { return (Vector3&)(Normals[index*3]);}
+        };
+
+        // raw indexed representation of faces & layers from FBX file
+        std::vector<Vertex>         Vertices;
+        std::vector<int>            PolygonVertexIndex;
+//        LayerElementNormal normals;
+        std::vector<float>        vertexNormals;
+        Vector3& getNormal(int index) {return (Vector3&)(vertexNormals[index*3]);}
+        std::vector<LayerElementUV> LayerElementUVs;
+        std::vector<LayerElementTexture>            LayerElementTextures;
+        // todo -materials, smoothing, vertex-colours, various options in there we've missed
+
+        // TODO: split these processed versions out.
+        // add preprocess for rendering vertices.
+        std::vector<VertexBoneWeights>  weightMap; // assembled from deformers..
+        std::vector<Triangle>	triangles;
 		// todo: quads, as intermediate for strips
 		FbxMesh() {}
 		void	NormalizeWeightMap();
-	};
+        void	PostLoadingSetup();
+    };
     class Texture {
     public:
         FbxString<256> filename;
@@ -198,7 +226,7 @@ public:
     FbxMesh*	GetMeshOfModel(Model* mdl) { return &this->meshes[mdl->meshId];}
     Model*  GetModel(const char* mdlName);
 	int  GetIndexOfModel(const char* mdlName);
-	void	Finalize();
+    void	PostLoadingSetup();
 	static const char*	GetRawModelName(const char* src);	// remove namespace qualifier Model::blah
     void    UpdateExtents(Extents& ext, const Model* mdl, const Matrix& parent);
 

@@ -1,7 +1,7 @@
 #include "fbxscene.h"
 
 
-void	FbxScene::Finalize()
+void	FbxScene::PostLoadingSetup()
 {
 	int	i;
 
@@ -49,7 +49,7 @@ FbxScene::UpdateExtents(Extents& dst,const Model* mdl, const Matrix& parentMat)
     auto worldMat=parentMat* mdl->localMatrix;
     auto msh=this->GetMeshOfModel(mdl);
     if (msh){
-        for (auto v:msh->vertices) {
+        for (auto v:msh->Vertices) {
             auto pos=worldMat * concat(v,1.f);
             FbxExtentsInclude(dst, FBXM::Vector3({pos[0],pos[1],pos[2]}));
 
@@ -231,6 +231,22 @@ FbxScene::EvalMatrixArray(Matrix* dst, const CycleEvalBuffer* src) const
     }
     dst[i]=lcl[i];
     g_permute++;
+
+}
+
+void
+FbxScene::FbxMesh::PostLoadingSetup() {
+    int triStart=0;
+    for (int i=0; i<PolygonVertexIndex.size();i++)
+    {
+        int pvi=PolygonVertexIndex[i]; if (pvi<0) pvi=~pvi;
+        if ((i-triStart)>=2) {
+            triangles.emplace_back(PolygonVertexIndex[triStart],PolygonVertexIndex[triStart+1],pvi);
+        }
+        if (PolygonVertexIndex[i]<0){
+            triStart = i+1;
+        }
+    }
 
 }
 

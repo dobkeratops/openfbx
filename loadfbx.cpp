@@ -21,7 +21,7 @@ public:
     FbxHeader   hdr;
     const char* c_str() const { return hdr.c_str();}
     bool operator==(const char* txt) {return hdr==txt;}
-    bool get(){
+    bool Get(){
         if (pf->eof()) return false;
         return hdr.LoadNext(*pf);
     }
@@ -49,7 +49,7 @@ LoadFbxAnimCurves(FbxScene* scn, FbxStream& src, FbxScene::Take* dst, const char
 {
 
 	int	keyCount=-1;
-    for (FbxSubBlocks hdr(src);hdr.get();)
+    for (FbxSubBlocks hdr(src);hdr.Get();)
 	{
 		// channel accumulates sub-channel name
 		if (hdr=="Channel:") {
@@ -221,7 +221,7 @@ void    LoadFbxConnections(FbxScene* scn, FbxStream& file)
 {
     fbx_printf("Connections{");
 
-    for (FbxSubBlocks hdr(file); hdr.get();)
+    for (FbxSubBlocks hdr(file); hdr.Get();)
     {
         if (hdr=="Connect:")
         {
@@ -262,7 +262,7 @@ void    LoadFbxConnections(FbxScene* scn, FbxStream& file)
 void
 LoadFbxTakes(FbxScene* scn, FbxStream& src)
 {
-    for (FbxSubBlocks hdr(src); hdr.get();)
+    for (FbxSubBlocks hdr(src); hdr.Get();)
 	{
         if (!(hdr=="Take:"))  {
             fbxBlockUnused(hdr); continue;
@@ -271,7 +271,7 @@ LoadFbxTakes(FbxScene* scn, FbxStream& src)
 		scn->takes.push_back(take);
         ReadString(take->name,src);
 		{
-            for (FbxSubBlocks hdr(src); hdr.get();) {
+            for (FbxSubBlocks hdr(src); hdr.Get();) {
 				if (hdr=="Model:") {
 					FbxString<256>	mdlName;
                     ReadString(mdlName,src);
@@ -290,7 +290,7 @@ void	LoadFbxModelProperties(FbxScene* scn, FbxScene::Model* mdl, FbxStream & src
 {
     for (auto pm=FbxScene::Model::s_Properties; pm->name; pm++)
 		fbx_printf("%s", pm->name);
-    for (FbxSubBlocks hdr(src); hdr.get();)
+    for (FbxSubBlocks hdr(src); hdr.Get();)
 	{
 		if (hdr=="Property:")
 		{
@@ -325,7 +325,7 @@ LoadFbxModel(FbxScene* pscn, FbxScene::Model* mdl, const char modelName[], const
     mdl->name = modelName;
     int numPolyVertex=0;
     FbxScene::FbxMesh*	mesh=0;
-    for (FbxSubBlocks hdr(src); hdr.get();)
+    for (FbxSubBlocks hdr(src); hdr.Get();)
 	{
 		fbx_dumpline(src);
 		if (hdr=="Properties60:") {
@@ -336,69 +336,58 @@ LoadFbxModel(FbxScene* pscn, FbxScene::Model* mdl, const char modelName[], const
 			if (!mesh) mesh=pscn->CreateMeshForModel(mdl);
 			int	vertexIndex=0;
             while (fbxIsNumber(src))
-			{
-                FbxScene::Vertex	v=ReadVector3(src);
-				mesh->vertices.push_back( v);
+            {
+                mesh->Vertices.push_back(ReadVector3(src));
 				vertexIndex++;
 			}
         } else
 		if (hdr=="PolygonVertexIndex:")
 		{
-			int	triIndex=0;
-            int faceIndex=0;
-            while (fbxIsNumber(src))
-            {
-                auto pv0=Read<int>(src), pv1=Read<int> (src);
-                numPolyVertex=2;
-                int pvn;
-                while (fbxIsNumber(src)) {
-                    //src >> pvn;fbxSkipComma(src);
-                    auto pvn=Read<int>(src);
-					int	pvnn = pvn>=0?pvn:(-pvn-1);
-                    facePerTri.push_back(triIndex);
-                    mesh->triangles.push_back( FbxScene::Triangle(pv0,pv1,pvnn) );
-                    numPolyVertex++;
-                    triIndex++;
-					pv1=pvnn;
-                    if (pvn<0)
-                        break;
-                }
-                faceIndex++;
-			}
+            FbxLoadNumericArray<int>(mesh->PolygonVertexIndex,src);
         }
-        /*
+        else if (hdr=="LayerElementNormal:")
+        {
+            if (mesh->vertexNormals.size()>=0) {
+                printf("WARNING current code assumes 1 normal 'layer'");
+            }
+            auto layerId = Read<int>(src);
+
+            for (FbxSubBlocks hdr(src);hdr.Get();)
+            {
+                if (hdr=="Normals:") {
+                    FbxLoadNumericArray<float>(mesh->vertexNormals,src);
+                }else fbxBlockUnused(hdr);
+            }
+        }
+
         else if (hdr=="LayerElementUV:")
         {
-            auto layer = Read<int>(src);
-            for (FbxSubBlocks hdr(src);src.get();)
+            auto layerId = Read<int>(src);
+            auto  layer = fbxAppend(mesh->LayerElementUVs);
+            for (FbxSubBlocks hdr(src);hdr.Get();)
             {
-                vector<float> uv;
-                vector<int> uvindex;
                 if (hdr=="UV:") {
-                    FbxLoadNumericArray(uv,src);
+                    FbxLoadNumericArray<float>(layer->UV,src);
                 } else if (hdr=="UVIndex:") {
-                    FbxLoadNumericArray(uvindex,src);
+                    FbxLoadNumericArray<int>(layer->UVIndex,src);
                 }else fbxBlockUnused(hdr);
-                // map the UV's into the mesh..
-                // TODO: USE POLYGON VERTEX
-                if (uvindex.size()) {
-                }
             }
         }
         else if (hdr=="LayerElementTexture:")
         {
             auto layer = Read<int>(src);
-            for (FbxSubBlocks hdr(src);src.get();)
+            auto layertex=fbxAppend(mesh->LayerElementTextures);
+            for (FbxSubBlocks hdr(src);hdr.Get();)
             {
-                if (hdr=="UV:") {
-
-                } else if (hdr=="UVIndex:") {
-
+                if (hdr=="TextureID:") {
+                    FbxLoadNumericArray<int>(layertex->TextureID,src);
                 }else fbxBlockUnused(hdr);
             }
-        }*/
+        }
         else fbxBlockUnused(hdr);
+
 	}
+    if (mesh) mesh->PostLoadingSetup();
 }
 
 
@@ -442,7 +431,7 @@ void	LoadFbxDeformer(FbxScene* scn, const char* modelName, const char* modelType
 	}
 	boneMdl->isDeformer=true;
 
-    for (FbxSubBlocks hdr(src); hdr.get();)
+    for (FbxSubBlocks hdr(src); hdr.Get();)
 	{
 		if (hdr=="Indexes:")  {
             FbxLoadNumericArray<int>(indices, src);
@@ -455,7 +444,7 @@ void	LoadFbxDeformer(FbxScene* scn, const char* modelName, const char* modelType
 	if (indices.size()>0)
 	{
 		auto mesh=scn->GetMeshOfModel(mdl);
-		if (!mesh->weightMap.size())  mesh->weightMap.resize(mesh->vertices.size());
+        if (!mesh->weightMap.size())  mesh->weightMap.resize(mesh->Vertices.size());
 		for (size_t i=0; i<indices.size(); i++)
 		{
 			mesh->weightMap[indices[i]].add(boneIndex, weights[i]);
@@ -471,7 +460,7 @@ LoadFbxTexture(FbxScene* scn, FbxStream& src)
     ReadString(texType,src);
 
     FbxScene::Texture tx;
-    for (FbxSubBlocks hdr(src); hdr.get(); ){
+    for (FbxSubBlocks hdr(src); hdr.Get(); ){
         if (hdr=="FileName:") {
             ReadString(tx.filename,src);
         }
@@ -484,7 +473,7 @@ LoadFbxObjects(FbxScene* scn, FbxStream& src)
 {
 	fbx_printf("load fbx objects Begin\n");
 
-    for (FbxSubBlocks hdr(src); hdr.get(); )
+    for (FbxSubBlocks hdr(src); hdr.Get(); )
 	{
 		if (hdr=="Model:")
 		{
@@ -526,7 +515,7 @@ LoadFbx(FbxScene*   scn, ifstream& file)
 			LoadFbxTakes(scn,src);
         else fbxBlockUnused(hdr);
 	}
-	scn->Finalize();
+    scn->PostLoadingSetup();
 }
 
 

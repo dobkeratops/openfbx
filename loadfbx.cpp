@@ -2,19 +2,14 @@
 
 using namespace std;
 
-
-void FatalError(const char* ) {
-}
-
-
 inline void	write(IWriter* dst, const FbxScene* scene) {scene->Write(dst);};
 
 class   FbxScene::Loader : public FbxUtil
 {
     FbxScene* scene;
-    FbxStream& file;
+    Stream& file;
 public:
-    Loader(FbxScene* s, FbxStream& f): scene(s),file(f){
+    Loader(FbxScene* s, Stream& f): scene(s),file(f){
         for (Header hdr; hdr.LoadNext(file);)
         {
             if (hdr=="Objects:")
@@ -35,19 +30,18 @@ public:
         //bool	LoadNext(FbxStream& src);
         Header&operator=(const char*src) { strncpy(&this->at(0),src,256); return *this;}
 
-        bool    LoadNext(FbxStream& src)
+        bool    LoadNext(Stream& src)
         {
             auto* hdr=this;
             char* header=&hdr->at(0);
             int	size=sizeof(*hdr);
-                fbx_dumpline(src);
             *this="";
             while (!src.eof())
             {
                 auto c=src.peek();
                 if  (c=='}')
                     return false;
-                if (c=='{') SkipBlock(src);
+                if (c=='{') src.SkipBlock();
                 else if (c==';') {
                     while (src.get()!='\n') {};
                 }
@@ -80,10 +74,10 @@ public:
 
     class   SubBlocks {
     public:
-        FbxStream*   pf;
-        SubBlocks(FbxStream& file) {
+        Stream*   pf;
+        SubBlocks(Stream& file) {
             pf=&file;
-            EnterBlock(*pf);
+            pf->EnterBlock();
         }
         Header   hdr;
         const char* c_str() const { return hdr.c_str();}
@@ -93,12 +87,12 @@ public:
             return hdr.LoadNext(*pf);
         }
         ~SubBlocks(){
-            ExitBlock(*pf);
+            pf->ExitBlock();
         }
     };
 
     static void BlockUnused(const Header& sb) {
-        printf("unused block %s\n",sb.c_str());
+        fbx_printf("unused block %s\n",sb.c_str());
     }
     static void BlockUnused(const SubBlocks& sb) {
         BlockUnused(sb.hdr);
@@ -116,7 +110,7 @@ public:
             // channel accumulates sub-channel name
             if (hdr=="Channel:") {
                 String<256> subn;
-                ReadString(subn,file);
+                file>> subn;
                 std::string chn;
                 chn=channelName;
                 if (strlen(channelName)>0)
@@ -141,13 +135,12 @@ public:
                 newCurve.modelIndex = scene->GetIndexOfModel(mdlName);
                 newCurve.channelIndex = GetChannelIndex(channelName);
 
-                if (keyCount>=0 && IsNumber(file))
+                if (keyCount>=0 && file.IsNumber())
                 {
-                    while (IsNumber(file))
-                    {
-                        auto t=Read<float>(file);
-                        auto f=Read<float>(file);
-                        auto l=Read<char>(file);
+                    while (file.IsNumber()){
+                        auto t=file.Read<float>();
+                        auto f=file.Read<float>();
+                        auto l=file.Read<char>();
 
                         fbx_printf("channel data:\t%lf\t%lf\t%c\n", t,f,l);
                         newCurve.points.push_back(FCurve::tvalue(t,f));
@@ -170,9 +163,7 @@ public:
             {
 
                 String<128> type,from,to;
-                ReadString(type,file);
-                ReadString(from,file);
-                ReadString(to,file);
+                file >> type>>from>>to;
                 auto fromMdl = scene->GetModel(from);
                 if (!(type=="OO"))
                     continue;
@@ -211,12 +202,12 @@ public:
             }
             auto* take = new Take;
             scene->takes.push_back(take);
-            ReadString(take->name,file);
+            file>> take->name;
             {
                 for (SubBlocks hdr(file); hdr.Get();) {
                     if (hdr=="Model:") {
                         String<256>	mdlName;
-                        ReadString(mdlName,file);
+                        file >> mdlName;
                         LoadAnimCurves(take, mdlName.c_str(), "");
                     }
                 }
@@ -236,18 +227,16 @@ public:
             if (hdr=="Property:")
             {
                 String<256> name, type, unknown;
-                ReadString(name,file);
-                ReadString(type, file);
-                ReadString(unknown,file);
+                file>>name>>type>>unknown;
                 if (name=="Lcl Translation") {
-                    mdl->localTranslate = Read<Vector3>(file);
+                    file>>mdl->localTranslate;
 
                 } else
                 if (name=="Lcl Rotation") {
-                    mdl->localRotate = Read<Vector3>(file);
+                    file>>mdl->localRotate;
                 } else
                 if (name=="Lcl Scaling") {
-                    mdl->localScale = Read<Vector3>(file);
+                    file>>mdl->localScale;
                 }
 
                 // else - parameter table for defaults.
@@ -268,55 +257,54 @@ public:
         Mesh*	mesh=nullptr;
         for (SubBlocks hdr(file); hdr.Get();)
         {
-            fbx_dumpline(file);
             if (hdr=="Properties60:") {
                 LoadModelProperties(mdl);
             } else
             if (hdr=="Vertices:")
             {
                 if (!mesh) mesh=scene->CreateMeshForModel(mdl);
-                LoadNumericArray(mesh->Vertices,file);
+                file.LoadNumericArray(mesh->Vertices);
             } else
             if (hdr=="PolygonVertexIndex:")
             {
-                LoadNumericArray(mesh->PolygonVertexIndex,file);
+                file.LoadNumericArray(mesh->PolygonVertexIndex);
             }
             else if (hdr=="LayerElementNormal:")
             {
                 if (mesh->vertexNormals.size()>0) {
                     printf("WARNING current code assumes 1 normal 'layer'");
                 }
-                auto layerId = Read<int>(file);
+                auto layerId = file.Read<int>();
 
                 for (SubBlocks hdr(file);hdr.Get();)
                 {
                     if (hdr=="Normals:") {
-                        LoadNumericArray(mesh->vertexNormals,file);
+                        file.LoadNumericArray(mesh->vertexNormals);
                     }else BlockUnused(hdr);
                 }
             }
 
             else if (hdr=="LayerElementUV:")
             {
-                auto layerId = Read<int>(file);
+                auto layerId = file.Read<int>();
                 auto  layer = fbxAppend(mesh->LayerElementUVs);
                 for (SubBlocks hdr(file);hdr.Get();)
                 {
                     if (hdr=="UV:") {
-                        LoadNumericArray(layer->UV,file);
+                        file.LoadNumericArray(layer->UV);
                     } else if (hdr=="UVIndex:") {
-                        LoadNumericArray(layer->UVIndex,file);
+                        file.LoadNumericArray(layer->UVIndex);
                     }else BlockUnused(hdr);
                 }
             }
             else if (hdr=="LayerElementTexture:")
             {
-                auto layer = Read<int>(file);
+                auto layer = file.Read<int>();
                 auto layertex=fbxAppend(mesh->LayerElementTextures);
                 for (SubBlocks hdr(file);hdr.Get();)
                 {
                     if (hdr=="TextureID:") {
-                        LoadNumericArray(layertex->TextureID,file);
+                        file.LoadNumericArray(layertex->TextureID);
                     }else BlockUnused(hdr);
                 }
             }
@@ -358,10 +346,10 @@ public:
         for (SubBlocks hdr(file); hdr.Get();)
         {
             if (hdr=="Indexes:")  {
-                LoadNumericArray<int>(indices, file);
+                file.LoadNumericArray<int>(indices);
             }
             else if (hdr=="Weights:") {
-                LoadNumericArray<float>(weights, file);
+                file.LoadNumericArray<float>(weights);
             }
             else BlockUnused(hdr);
         }
@@ -381,13 +369,12 @@ public:
     LoadTexture()
     {
         String<256> texName,texType;
-        ReadString(texName,file);
-        ReadString(texType,file);
+        file>>texName>>texType;
 
         Texture tx;
         for (SubBlocks hdr(file); hdr.Get(); ){
             if (hdr=="FileName:") {
-                ReadString(tx.filename,file);
+                file >> tx.filename;
             }
         }
         scene->textures.push_back(tx);
@@ -401,8 +388,7 @@ public:
             if (hdr=="Model:")
             {
                 String<512> modelName, modelType;
-                ReadString(modelName, file);
-                ReadString(modelType, file);
+                file >>modelName>>modelType;
                 fbx_printf("Load model %s %s {\n",modelName.c_str(),modelType.c_str());
                 auto	mdl = new Model;
                 scene->allModels.push_back(mdl);
@@ -412,8 +398,7 @@ public:
             else if (hdr=="Deformer:")
             {
                 String<256> modelName, modelType;
-                ReadString(modelName,file);
-                ReadString(modelType,file);
+                file >> modelName>>modelType;
                 LoadDeformer(modelName, modelType);
             } else if (hdr=="Texture:") {
                 LoadTexture();
@@ -424,7 +409,7 @@ public:
 };
 
 void
-LoadFbx(FbxScene* pScene, FbxStream& file)
+LoadFbx(FbxScene* pScene, FbxUtil::Stream& file)
 {
     FbxScene::Loader loader(pScene,file);
 }

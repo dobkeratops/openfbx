@@ -1,9 +1,16 @@
 #include "fbxutil.h"
 
 //bool isWithin(char v, char lo, char hi){return v>=lo && v<=hi;}
+
+bool FbxUtil::IsNumberStart(const char* s){
+    char c0=s[0],c1=0; if (c0) c1=s[1];
+    return	(c0=='-' && (c0=='.' || within(c1,'0','9')))
+        || within(c0,'0','9');
+}
+
 bool	FbxUtil::IsAlphaNumeric(char c)
 {
-    return	IsWithin(c,'0','9') || IsSymbolStart(c);
+    return	within(c,'0','9') || IsSymbolStart(c);
 }
 bool	FbxUtil::IsWhitespace(char c)
 {
@@ -13,7 +20,6 @@ bool FbxUtil::IsSeparator(char c)
 {
     return	c==',' || c==';';
 }
-void	FbxUtil::SkipLine(std::ifstream& src) {src.ignore(1024,'\n');}
 
 void updateBraceDepth(int& depth,char c){
     if (c=='{')
@@ -22,65 +28,73 @@ void updateBraceDepth(int& depth,char c){
         depth--;
 }
 
-bool	FbxUtil::fbxSkipComma(std::ifstream& src)
+bool	FbxUtil::Stream::fbxSkipComma()
 {
-    SkipWhitespace(src);
-    char c; src>>c; if (c==',') return true; else src.unget(); return false;
+    SkipWhitespace();
+    char c; (*this)>>c; if (c==',') return true; else unget(); return false;
+}
+void	FbxUtil::Stream::SkipLine() {ignore(1024,'\n');}
+bool	FbxUtil::Stream::IsNumber()
+{
+    SkipWhitespace();
+    char c0=0,c1=0; c0=get(); c1=peek ();  unget();
+    return	(c0=='-' && (c1=='.' || within(c1,'0','9')))
+        || within(c0,'0','9');
 }
 
-void	FbxUtil::ExitBlock(std::ifstream& src)
+void	FbxUtil::Stream::ExitBlock()
 {
     int	count=0;
     do {
-        updateBraceDepth(count,src.get());
-    } while (count>=0 && !src.eof());
+        updateBraceDepth(count,get());
+    } while (count>=0 && !eof());
 };
 
-void	FbxUtil::SkipWhitespace(std::ifstream& src) {
+void	FbxUtil::Stream::SkipWhitespace() {
     do {
-        char c = src.peek();
+        char c = peek();
         if (c==' ' || c=='\t' || c=='\n' || c==0xa || c==0xd) {
-            src.get(c);
+            get(c);
             continue;
         } else
             break;
     }
-    while (!src.eof());
+    while (!eof());
 }
 
-void    FbxUtil::SkipWhitespaceAndSemicolonComments(std::ifstream& src)
+void    FbxUtil::Stream::SkipWhitespaceAndSemicolonComments()
 {
     do {
-        SkipWhitespace(src);
-        char c = src.peek();
+        SkipWhitespace();
+        char c = peek();
         if (c==';') {
-            SkipLine(src);
+            SkipLine();
         }
         else break;
     }
-    while (!src.eof());
+    while (!eof());
 }
 
-bool	FbxUtil::EnterBlock(std::ifstream& src)
+bool	FbxUtil::Stream::EnterBlock()
 {
     char c;
-    SkipWhitespace(src);
-    do { if (src.peek()=='}') return false; c=src.get(); } while (c!='{' && !src.eof());
+    SkipWhitespace();
+    do { if (peek()=='}') return false; c=get(); } while (c!='{' && !eof());
     if (c=='{') return true;
     else return false;
 }
-void	FbxUtil::SkipBlock(std::ifstream& src)
+void	FbxUtil::Stream::SkipBlock()
 {
-    if (EnterBlock(src)) { ExitBlock(src); };
+    if (EnterBlock()) { ExitBlock(); };
 };
 
-void	FbxUtil::file_trace_line(FbxStream& src) {
+void	FbxUtil::Stream::file_trace_line() {
 
-    auto pos=src.tellg();
+    auto pos=tellg();
     int	i;
     cout<<"FILE["<<pos<<"]:";
-    for (i=0; i<30; i++) { char c[2];c[0]=src.get();c[1]=0;cout<<c; } cout <<"\n";
-    src.seekg(pos);
+    for (i=0; i<30; i++) { char c[2];c[0]=get();c[1]=0;cout<<c; } cout <<"\n";
+    seekg(pos);
 }
 
 

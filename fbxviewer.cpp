@@ -289,7 +289,7 @@ int main(int argc, const char** argv)
 {
 
     FbxScene	scn;
-	ifstream fs;
+    FbxUtil::Stream fs;
 	auto srcfile=argv[1];
 	if (!srcfile) {
 		srcfile="data/test.fbx";

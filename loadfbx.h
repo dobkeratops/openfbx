@@ -4,7 +4,7 @@
 #include "fbxscene.h"
 
 void
-LoadFbx(FbxScene*   scn, std::ifstream& src);
+LoadFbx(FbxScene*   scn, FbxUtil::Stream& src);
 
 
 #ifdef TEST

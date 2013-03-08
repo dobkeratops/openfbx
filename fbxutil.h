@@ -27,72 +27,85 @@ class FbxUtil : public FbxMath
 {
 public:
     template<typename T>
-    static inline bool	IsWithin(T c, T lo, T hi) {return c>=lo && c<=hi;}
-    static inline bool	IsSymbolStart(char c){return IsWithin(c,'a','z') || IsWithin(c,'A','Z')|| c=='_';}
-    static inline bool	IsSymbolCont(char c){return	 IsSymbolStart(c)||IsWithin(c,'0','9');}
-    static inline bool	IsNumber(std::ifstream& src)
-    {
-        char c0=0,c1=0; src>>c0; c1=src.peek ();  src.unget();
-        return	(c0=='-' && (c1=='.' || IsWithin(c1,'0','9')))
-            || IsWithin(c0,'0','9');
-    }
-    static inline bool IsNumberStart(const char* s){
-        char c0=s[0],c1=0; if (c0) c1=s[1];
-        return	(c0=='-' && (c0=='.' || IsWithin(c1,'0','9')))
-            || IsWithin(c0,'0','9');
-    }
-    // todo:IsHex() IsFloat() IsInt()
-    //extern bool BeginsSymbol(char c);
+    static inline bool	within(T c, T lo, T hi) {return c>=lo && c<=hi;}
+    static inline bool	IsSymbolStart(char c){return within(c,'a','z') || within(c,'A','Z')|| c=='_';}
+    static inline bool	IsSymbolCont(char c){return	 IsSymbolStart(c)||within(c,'0','9');}
+    static bool IsNumberStart(const char* src);
     static bool	IsAlphaNumeric(char c);
     static bool	IsWhitespace(char c);
     static bool	IsSeparator(char c);
-    static void	SkipLine(std::ifstream& src);
-    static bool	fbxSkipComma(std::ifstream& src);
-    static bool	EnterBlock(std::ifstream& src);
-    static void	ExitBlock2(std::ifstream& src);
-    static void	ExitBlock(std::ifstream& src);
-    static void	SkipBlock(std::ifstream& src);
-    static void	SkipWhitespace(std::ifstream& src);
-    static void SkipWhitespaceAndSemicolonComments(std::ifstream& src);
-    static void	file_trace_line(FbxStream& src);
-
-
-    template<typename T>
-    static T Read(std::ifstream& src) {
-        T	r; src>> r; fbxSkipComma(src);
-        return r;
-    }
-
-    template<typename T>
-    static void	LoadNumericArray(vector<T>&	dst, FbxStream& src)
-    {   while(IsNumber(src)) {
-            dst.push_back(Read<T>(src));
+    class Stream : public ifstream{
+        // todo- mayinclude line,nesting depth?
+    public:
+//        Stream(std::ifstream& f) :src(f){};
+        void	SkipLine();
+        bool	fbxSkipComma();
+        bool	EnterBlock();
+        void	ExitBlock();
+        void	SkipBlock();
+        void	SkipWhitespace();
+        void SkipWhitespaceAndSemicolonComments();
+        void	file_trace_line();
+        bool IsNumber();
+        template<typename T>
+        T Read() {
+            T	r; *this>> r; fbxSkipComma();
+            return r;
         }
-        dst.shrink_to_fit();
-    }
+        Stream& operator>>(float& f) {
+            ifstream::operator>>(f);
+            fbxSkipComma();
+            return*this;
+        }
+        Stream& operator>>(int& n) {
+            ifstream::operator>>(n);
+            fbxSkipComma();
+            return*this;
+        }
 
-    template<typename T>
-    static bool	ReadString(T& s, std::ifstream& f)
-    {
-        char c; f>>c;
-        if (c!='\"') { f.unget(); return false;}
-        f.getline((char*)&s, sizeof(T)-1, '\"');
-        fbxSkipComma(f);
-        return	true;
-    }
+        template<typename T>
+        void	LoadNumericArray(vector<T>&	dst)
+        {   while(IsNumber()) {
+                dst.push_back(Read<T>());
+            }
+            dst.shrink_to_fit();
+        }
+        template<typename T>
+        bool	ReadString(T& s)
+        {
+            //SkipWhitespace();
+            char c; *this>>c;
+            if (c!='\"') { unget(); return false;}
+            getline((char*)&s, sizeof(T)-1, '\"');
+            fbxSkipComma();
+            return	true;
+        }
+    };
 };
 
-template<>
-inline FBXM::Vector2  FbxUtil::Read(std::ifstream& src){
-    return Vector2(Read<float>(src),Read<float>(src));
+template<typename T,int N>
+inline FbxUtil::Stream& operator>>(FbxUtil::Stream& src, std::array<T,N>& dst){
+    for (int i=0; i<N;i++) src>>dst[i];
 }
-template<>
-inline FbxMath::Vector3  FbxUtil::Read(std::ifstream& src){
-    return Vector3(Read<float>(src),Read<float>(src),Read<float>(src));
+
+inline FbxUtil::Stream& operator>>(FbxUtil::Stream& src, FBXM::Vector2& dst){
+    src>>dst[0]>>dst[1]>>dst[2];
+    return src;
 }
-template<>
-inline FbxMath::Vector4  FbxUtil::Read(std::ifstream& src){
-    return Vector4(Read<float>(src),Read<float>(src),Read<float>(src),Read<float>(src));
+inline FbxUtil::Stream& operator>>(FbxUtil::Stream& src, FBXM::Vector3& dst){
+    src>>dst[0]>>dst[1]>>dst[2];
+    return src;
+}
+inline FbxUtil::Stream& operator>>(FbxUtil::Stream& src, FBXM::Vector4& dst){
+    src>>dst[0]>>dst[1]>>dst[2]>>dst[3];
+    return src;
+}
+
+
+template<int N>
+inline FbxUtil::Stream& operator>>(FbxUtil::Stream& src,FbxUtil::String<N>& dst) {
+    src.ReadString(dst);
+    return src;
 }
 
 

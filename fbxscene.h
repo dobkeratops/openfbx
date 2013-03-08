@@ -259,8 +259,6 @@ public:
         struct	tvalue { float t, value;
             tvalue(float _t, float _v) {t=_t; value=_v;}
         };
-//		short	boneIndex;
-//		char	component; char subComponent;
 		FbxString<128> boneName; FbxString<128> channelName;
 		int	modelIndex; Channel_t channelIndex;
         std::vector<tvalue> points;
@@ -274,7 +272,6 @@ public:
 	public:
 		FbxString<256>	name;
 		std::vector<StaticBonePose> staticBones;
-		//vector<SRT>		baseSRT;			// TODO:fixed pose precalcualted.
 		std::vector<FCurve>	curves;
         void    Setup();
         float   maxt;
@@ -282,8 +279,8 @@ public:
 	std::vector<Take*>	takes;
 
     FbxScene() { }
-//	~Fbx() { FOR_EACH_IN(m,this->allModels) delete m;}
     ~FbxScene () { for (auto& m :this->allModels) delete m;}
+
 
     typedef std::vector<std::array<float, NumChannels> > CycleEvalBuffer;
 	void	InitCycleEvalBuffer(CycleEvalBuffer& dst) const;

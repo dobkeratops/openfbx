@@ -1,10 +1,10 @@
 #include "fbxmath.h"
 
 
-FBXM::Matrix FbxMatrixRot_pZ_mY_pX(const FBXM::Vector3& ang) { return   FbxMatrixRotZ(ang[2])*FbxMatrixRotY(-ang[1]) *FbxMatrixRotX(ang[0]);  }
-FBXM::Matrix   FbxMatrixTranslate(const FBXM::Vector3 trans) { auto m=FbxMatrixIdentity(); m[3] = concat(trans,1.f);    return  m;}
-FBXM::Matrix   FbxMatrixScale(const FBXM::Vector3   scale) { auto m=FbxMatrixIdentity();for (int i=0; i<3; i++) { m[i][i]=scale[i]; };  return  m;}
-FBXM::Matrix FbxMatrixSrt(FBXM::Vector3 scale, FBXM::Vector3 rotate, FBXM::Vector3 translate)   {   return  FbxMatrixTranslate(translate) *  FbxMatrixRot_pZ_mY_pX(rotate) * FbxMatrixScale(scale);   }
+FBXM::Matrix    FbxMatrixRot_pZ_mY_pX(const FBXM::Vector3& ang) { return   FbxMatrixRotZ(ang[2])*FbxMatrixRotY(-ang[1]) *FbxMatrixRotX(ang[0]);  }
+FBXM::Matrix    FbxMatrixTranslate(const FBXM::Vector3 trans) { auto m=FbxMatrixIdentity(); m[3] = concat(trans,1.f);    return  m;}
+FBXM::Matrix    FbxMatrixScale(const FBXM::Vector3   scale) { auto m=FbxMatrixIdentity();for (int i=0; i<3; i++) { m[i][i]=scale[i]; };  return  m;}
+FBXM::Matrix    FbxMatrixSrt(FBXM::Vector3 scale, FBXM::Vector3 rotate, FBXM::Vector3 translate)   {   return  FbxMatrixTranslate(translate) *  FbxMatrixRot_pZ_mY_pX(rotate) * FbxMatrixScale(scale);   }
 
 void    FbxMath::EvalSRT(Matrix* dst, const float* ch)
 {

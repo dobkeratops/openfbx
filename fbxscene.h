@@ -200,18 +200,18 @@ public:
         Model*			parent;
         std::vector<Model*>    childModels;
         static	PropertyDef<Model>	s_Properties[];
-		bool	isDeformer;
-       // std::unique_ptr<Mesh>    mesh;
-        Mesh*mesh;
+        bool	isDeformer;
+        unique_ptr<Mesh>    mesh;
+
 
         //int	meshId;
 		Matrix GetLocalMatrix() const;
         //bool	HasMesh() const { return meshId>=0;}
         Model();
-        ~Model() {if (mesh) delete mesh;}
+        ~Model() {}
 		void	CalcLocalMatrixFromSRT();
         Matrix	GetLocalMatrixPermuteTest(int permute) const;
-        Mesh* GetMesh(){if (!mesh) mesh= new Mesh; return mesh;}
+        Mesh* GetMesh(){if (!mesh) mesh= fbxMakeUnique<Mesh>(); return mesh.get();}
 	};
 
 	std::string	name;
@@ -225,8 +225,8 @@ public:
     Model*	CreateModel() { auto mdl=new Model(); allModels.push_back(mdl); return mdl;}
     Mesh*	CreateMeshForModel(Model* mdl);
     //const Mesh*	GetMeshOfModel(const Model* mdl) const { return mdl->meshId>=0?&this->meshes[mdl->meshId]:nullptr;}
-    Mesh*	GetMeshOfModel(Model* mdl) { return mdl->mesh;}
-    const Mesh*	GetMeshOfModel(const Model* mdl) const { return mdl->mesh;}
+    Mesh*	GetMeshOfModel(Model* mdl) { return mdl->mesh.get();}
+    const Mesh*	GetMeshOfModel(const Model* mdl) const { return mdl->mesh.get();}
     Model*  GetModel(const char* mdlName);
 	int  GetIndexOfModel(const char* mdlName);
     void	PostLoadingSetup();

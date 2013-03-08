@@ -43,8 +43,8 @@ FbxScene::Mesh*	FbxScene::CreateMeshForModel(Model*	mdl)
     //auto mesh=fbxAppend(this->meshes,1);
     //return mesh;
     if (!mdl->mesh)
-        mdl->mesh= new Mesh;
-    return mdl->mesh;
+        mdl->mesh= fbxMakeUnique<Mesh>();
+    return mdl->mesh.get();
 }
 
 void

@@ -162,7 +162,7 @@ FbxScene::GetIndexOfModel(const char* mdlName)
 }
 
 void
-FbxScene::FbxMesh::NormalizeWeightMap() {
+FbxScene::Mesh::NormalizeWeightMap() {
 	//FOR_EACH_IN (wm,this->weightMap)
 	for (size_t n=0; n<this->weightMap.size(); n++)
 	{
@@ -324,7 +324,7 @@ LoadFbxModel(FbxScene* pscn, FbxScene::Model* mdl, const char modelName[], const
     vector<int> facePerTri;
     mdl->name = modelName;
     int numPolyVertex=0;
-    FbxScene::FbxMesh*	mesh=0;
+    FbxScene::Mesh*	mesh=nullptr;
     for (FbxSubBlocks hdr(src); hdr.Get();)
 	{
 		fbx_dumpline(src);
@@ -333,8 +333,7 @@ LoadFbxModel(FbxScene* pscn, FbxScene::Model* mdl, const char modelName[], const
         } else
 		if (hdr=="Vertices:")
 		{
-			if (!mesh) mesh=pscn->CreateMeshForModel(mdl);
-			int	vertexIndex=0;
+            if (!mesh) mesh=mdl->GetMesh();
             FbxLoadNumericArray(mesh->Vertices,src);
         } else
 		if (hdr=="PolygonVertexIndex:")

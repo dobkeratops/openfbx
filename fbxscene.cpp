@@ -5,8 +5,9 @@ void	FbxScene::PostLoadingSetup()
 {
 	int	i;
 
-	for (auto& msh : this->meshes)
-		msh.NormalizeWeightMap();
+    for (auto& mdl : this->allModels) {
+        if (mdl->mesh) mdl->mesh->NormalizeWeightMap();
+    }
     for (auto& take :this->takes)
         take->Setup();
     this->extents = FbxExtentsInit();
@@ -36,11 +37,14 @@ FbxScene::Model::CalcLocalMatrixFromSRT()
 }
 
 
-FbxScene::FbxMesh*	FbxScene::CreateMeshForModel(Model*	mdl)
+FbxScene::Mesh*	FbxScene::CreateMeshForModel(Model*	mdl)
 {
-	mdl->meshId = this->meshes.size();
-	auto mesh=fbxAppend(this->meshes,1);
-	return mesh;
+    //mdl->meshId = this->meshes.size();
+    //auto mesh=fbxAppend(this->meshes,1);
+    //return mesh;
+    if (!mdl->mesh)
+        mdl->mesh= new Mesh;
+    return mdl->mesh;
 }
 
 void
@@ -72,7 +76,8 @@ FbxScene::Model::Model()
 	r++;
     weightMapColor=s_WeightMapColors[r&3];
 	this->isDeformer=false;
-	meshId=-1;
+//	meshId=-1;
+    mesh=0;
 	parent=0;
 }
 
@@ -235,7 +240,7 @@ FbxScene::EvalMatrixArray(Matrix* dst, const CycleEvalBuffer* src) const
 }
 
 void
-FbxScene::FbxMesh::PostLoadingSetup() {
+FbxScene::Mesh::PostLoadingSetup() {
     int triStart=0;
     for (int i=0; i<PolygonVertexIndex.size();i++)
     {

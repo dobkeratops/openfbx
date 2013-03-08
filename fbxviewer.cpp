@@ -63,7 +63,7 @@ void	FbxViewer::DrawPoint(const Vector3& c, float s) {
 void	FbxViewer::DrawPoint(const Vector4& c, float s) {
     DrawPoint(Vector3({{c[0],c[1],c[2]}}),s);
 }
-void	FbxViewer::MeshDrawWeightMap(const FbxScene* scn, const Model* mdl, const FbxMesh*msh, const Matrix& mat)
+void	FbxViewer::MeshDrawWeightMap(const FbxScene* scn, const Model* mdl, const Mesh*msh, const Matrix& mat)
 {
     int	i;
     glBegin(GL_TRIANGLES);
@@ -96,7 +96,7 @@ void	FbxViewer::MeshDrawWeightMap(const FbxScene* scn, const Model* mdl, const F
 
 }
 
-void	FbxViewer::MeshDrawWire(const FbxScene* scn, const Model* mdl, const FbxMesh*msh, const Matrix& mat)
+void	FbxViewer::MeshDrawWire(const FbxScene* scn, const Model* mdl, const Mesh*msh, const Matrix& mat)
 {
 	int	i;
     glBegin(GL_LINES);

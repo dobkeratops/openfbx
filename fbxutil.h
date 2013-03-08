@@ -9,6 +9,7 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <memory>
 
 #ifndef ASSERT
     #define ASSERT(x) { if (!(x)) { fbx_printf("failed %s:%d %s",__FILE__,__LINE__,#x); }}
@@ -20,6 +21,11 @@
 inline void fbx_printf(const char*,...) { };
 #endif
 
+template<typename T, typename... Args>
+std::unique_ptr<T> fbxMakeUnique(Args&&... args)
+{
+    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+}
 //typedef FBXM::Matrix FbxMatrix;
 template<typename T> inline T*	fbxAppend(std::vector<T>& list, int numToAdd=1) { int oldSize=list.size(); list.resize(oldSize+numToAdd); return &list[oldSize];}
 

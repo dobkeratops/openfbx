@@ -1,6 +1,7 @@
 #ifndef fbxscene_h
 #define fbxscene_h
 
+#include<memory>
 #include "fbxutil.h"
 #include "fbxmath.h"
 
@@ -147,7 +148,7 @@ public:
 		void	Write(IWriter*) const;
 	};
 
-	class	FbxMesh 
+    class	Mesh
 	{
 	public:
         class LayerElementUV {
@@ -178,7 +179,7 @@ public:
         std::vector<VertexBoneWeights>  weightMap; // assembled from deformers..
         std::vector<Triangle>	triangles;
 		// todo: quads, as intermediate for strips
-		FbxMesh() {}
+        Mesh() {}
 		void	NormalizeWeightMap();
         void	PostLoadingSetup();
     };
@@ -200,27 +201,32 @@ public:
         std::vector<Model*>    childModels;
         static	PropertyDef<Model>	s_Properties[];
 		bool	isDeformer;
+       // std::unique_ptr<Mesh>    mesh;
+        Mesh*mesh;
 
-		int	meshId;
+        //int	meshId;
 		Matrix GetLocalMatrix() const;
-		bool	HasMesh() const { return meshId>=0;}
+        //bool	HasMesh() const { return meshId>=0;}
         Model();
+        ~Model() {if (mesh) delete mesh;}
 		void	CalcLocalMatrixFromSRT();
         Matrix	GetLocalMatrixPermuteTest(int permute) const;
+        Mesh* GetMesh(){if (!mesh) mesh= new Mesh; return mesh;}
 	};
 
 	std::string	name;
     std::vector<Model*> allModels;	// collection owns all models
     std::vector<Model*> rootModels;	// heirarchy roots
-    std::vector<FbxMesh>    meshes;
+    //std::vector<FbxMesh>    meshes;
     std::vector<HrcLink>    hrcLinks;	// parent-child relations, "object-owner"?
     std::vector<Texture>    textures;
     Extents extents;
 
     Model*	CreateModel() { auto mdl=new Model(); allModels.push_back(mdl); return mdl;}
-    FbxMesh*	CreateMeshForModel(Model* mdl);
-    const FbxMesh*	GetMeshOfModel(const Model* mdl) const { return mdl->meshId>=0?&this->meshes[mdl->meshId]:nullptr;}
-    FbxMesh*	GetMeshOfModel(Model* mdl) { return &this->meshes[mdl->meshId];}
+    Mesh*	CreateMeshForModel(Model* mdl);
+    //const Mesh*	GetMeshOfModel(const Model* mdl) const { return mdl->meshId>=0?&this->meshes[mdl->meshId]:nullptr;}
+    Mesh*	GetMeshOfModel(Model* mdl) { return mdl->mesh;}
+    const Mesh*	GetMeshOfModel(const Model* mdl) const { return mdl->mesh;}
     Model*  GetModel(const char* mdlName);
 	int  GetIndexOfModel(const char* mdlName);
     void	PostLoadingSetup();

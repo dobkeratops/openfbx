@@ -186,7 +186,7 @@ FbxViewer::DrawCubePoints(float f)
 
 void	FbxViewer::SceneDraw(const FbxScene* scn,int take,float t)
 {
-    auto    mat=FbxMatrixIdentity();
+    auto    mat=Matrix::Identity();
 
 	glEnable (GL_DEPTH_TEST);
 	for (auto& mp :scn->rootModels)
@@ -219,15 +219,15 @@ void	FbxViewer::SceneDraw(const FbxScene* scn,int take,float t)
 
 
 FbxScene*	FbxViewer::s_pFbxScene;
-FbxMath::Vector3	FbxViewer::s_Axis=fbxvec3(0.707f,0.f,0.707f);
+FbxMath::Vector3	FbxViewer::s_Axis=Vector3(0.707f,0.f,0.707f);
 void	FbxViewer::Keyboard(unsigned char key, int, int)
 {
 	switch (key)
 	{
-    case '1': s_Axis=fbxvec3(1.f,0.f,0.f); break;
-    case '2': s_Axis=fbxvec3(0.f,1.f,0.f); break;
-    case '3': s_Axis=fbxvec3(0.f,0.f,1.f); break;
-    case '4': s_Axis=fbxvec3(0.707f,0.f,.707); break;
+    case '1': s_Axis=Vector3(1.f,0.f,0.f); break;
+    case '2': s_Axis=Vector3(0.f,1.f,0.f); break;
+    case '3': s_Axis=Vector3(0.f,0.f,1.f); break;
+    case '4': s_Axis=Vector3(0.707f,0.f,.707); break;
     case 'q': s_PermuteSrt++; break;
     case 'a': s_PermuteSrt--; break;
     case 'w': s_PermuteSrt+=8; break;

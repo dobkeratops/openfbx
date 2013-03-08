@@ -12,7 +12,7 @@ void	FbxScene::PostLoadingSetup()
         take->Setup();
     this->extents = Extents3();
     for (auto pModel: this->rootModels)
-        this->UpdateExtents(this->extents,pModel,FbxMatrixIdentity());
+        this->UpdateExtents(this->extents,pModel,Matrix::Identity());
 
 }
 float FbxScene::Radius()const
@@ -33,7 +33,7 @@ float FbxScene::Model::GetChannel(Channel_t c) const{
 void
 FbxScene::Model::CalcLocalMatrixFromSRT()
 {
-    this->localMatrix = MatrixSrt(this->localScale, this->localRotate, this->localTranslate);
+    this->localMatrix = Matrix::Srt(this->localScale, this->localRotate, this->localTranslate);
 }
 
 FbxScene::Matrix
@@ -126,11 +126,11 @@ FbxScene::Matrix	FbxScene::Model::GetLocalMatrixPermuteTest(int permute)  const
 {
 	int	n=permute;
     FbxScene::Matrix	rot;
-    FbxScene::Matrix rotx=FbxMatrixRotX(((n&1)?1.f:-1.f)*this->localRotate[0]);
-    FbxScene::Matrix roty=FbxMatrixRotY(((n&2)?1.f:-1.f)*this->localRotate[1]);
-    FbxScene::Matrix rotz=FbxMatrixRotZ(((n&4)?1.f:-1.f)*this->localRotate[2]);
-    FbxScene::Matrix trans=MatrixTranslate(this->localTranslate);
-    FbxScene::Matrix scale=MatrixScale(this->localScale);
+    FbxScene::Matrix rotx=Matrix::Rotate<0>(((n&1)?1.f:-1.f)*this->localRotate[0]);
+    FbxScene::Matrix roty=Matrix::Rotate<1>(((n&2)?1.f:-1.f)*this->localRotate[1]);
+    FbxScene::Matrix rotz=Matrix::Rotate<2>(((n&4)?1.f:-1.f)*this->localRotate[2]);
+    FbxScene::Matrix trans=Matrix::Translate(this->localTranslate);
+    FbxScene::Matrix scale=Matrix::Scale(this->localScale);
 
 	switch (n>>3) {
 	case 0:rot=	roty*rotz*rotx;break;
@@ -222,7 +222,7 @@ FbxScene::EvalMatrixArray(Matrix* dst, const CycleEvalBuffer* src) const
 
     std::vector<Matrix>	lcl;
     lcl.resize (num);
-    Matrix	origin=FbxMatrixIdentity();
+    Matrix	origin=Matrix::Identity();
 
     int	i;
     for (i=0; i<num; i++) {
@@ -296,7 +296,7 @@ FbxDumpScene(const FbxScene* scn,IWriter* out)
     out->beginMap();
     out->keyValue("min",scn->extents.min);
     out->keyValue("max",scn->extents.max);
-    auto    ident=FbxMatrixIdentity();
+    auto    ident=FBXM::Matrix::Identity();
     out->keyValue("numRootModels",(int)scn->rootModels.size());
     out->beginKeyValue("modelNames");
     out->beginArray(scn->allModels.size());

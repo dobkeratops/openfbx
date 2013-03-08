@@ -277,22 +277,23 @@ FbxScene::VertexBoneWeights::add(int bi, float w)
 
 
 void
-FbxDumpModel(const FbxScene* scn, const FbxScene::Model* mdl, const FbxScene::Matrix& parent,int depth,IWriter* out)
+FbxScene::Model::Dump(const FbxScene::Matrix& parent,int depth,IWriter* out)
 {
-    FbxScene::Matrix 	lmat=parent * mdl->GetLocalMatrix();
+    FbxScene::Matrix 	lmat=parent * this->GetLocalMatrix();
     out->beginMap();
-    out->keyValue("name", mdl->name);
+    out->keyValue("name", this->name);
     out->keyValue("globalMatrix", lmat);
     out->endMap();
     int	i;
 
-    for (auto& sm: mdl->childModels)
-        FbxDumpModel(scn,	sm, lmat,depth+1, out);
+    for (auto sm: this->childModels)
+        sm->Dump(lmat,depth+1, out);
 }
 
 void
-FbxDumpScene(const FbxScene* scn,IWriter* out)
+FbxScene::Dump(IWriter* out)
 {
+    auto scn=this;
     out->beginMap();
     out->keyValue("min",scn->extents.min);
     out->keyValue("max",scn->extents.max);
@@ -318,7 +319,7 @@ FbxDumpScene(const FbxScene* scn,IWriter* out)
     }
 
     for (auto& mp :scn->rootModels)
-        FbxDumpModel(scn, mp, ident, 0, out);
+        mp->Dump(ident, 0, out);
 
     out->endMap();
 }

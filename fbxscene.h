@@ -147,7 +147,8 @@ public:
 		void	CalcLocalMatrixFromSRT();
         Matrix	GetLocalMatrixPermuteTest(int permute) const;
         Mesh* GetMesh(){ return mesh.get();}
-	};
+        void Dump(const Matrix& parent,int depth,IWriter* out);
+    };
     typedef std::vector<std::array<float, NumChannels> > CycleEvalBuffer;
 
 	std::string	name;
@@ -207,9 +208,8 @@ public:
     typedef float Model::*ModelFloatPtr_t;
     float Radius() const;
     Vector3 Centre() const;
+    void Dump(IWriter*);
 };
-void    FbxDumpModel(const FbxScene* scn, const FbxScene::Model* mdl, const FbxMath::Matrix& p);
-void	FbxDumpScene(const FbxScene* scn,IWriter* out) ;
 
 
 

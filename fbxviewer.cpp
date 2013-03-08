@@ -303,7 +303,7 @@ int main(int argc, const char** argv)
     FbxViewer::s_pFbxScene=&scn;
 	fs.close();
 	IWriter outp(stdout);
-	FbxDumpScene(&scn, &outp);
+    scn.Dump(&outp);
 
 	glutInit(&argc,(char**) argv);
     glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA|GLUT_MULTISAMPLE);

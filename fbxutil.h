@@ -2,16 +2,12 @@
 #ifndef fbxutil_h
 #define fbxutil_h
 
-#include <math.h>
-#include <array>
-#include <string.h>
-#include <vector>
+#include "fbxmath.h"
 #include <string>
 #include <iostream>
 #include <fstream>
 #include <memory>
 
-#include "fbxmath.h"
 
 #ifndef ASSERT
     #define ASSERT(x) { if (!(x)) { FBXM::fbx_printf("failed %s:%d %s",__FILE__,__LINE__,#x); }}
@@ -27,109 +23,80 @@ std::unique_ptr<T> fbxMakeUnique(Args&&... args)
 //typedef FBXM::Matrix FbxMatrix;
 template<typename T> inline T*	fbxAppend(std::vector<T>& list, int numToAdd=1) { int oldSize=list.size(); list.resize(oldSize+numToAdd); return &list[oldSize];}
 
-template<typename T>
-inline bool	le(T a,T b, T c) {return a<=b && b<=c;};
-inline bool	fbxIsSymbolStart(char c)	{return le('a',c,'z') || le('A',c,'Z')|| c=='_';}
-inline bool	fbxIsSymbolCont(char c)	{return	 fbxIsSymbolStart(c)||le('0',c,'9');}
-
-
-
-
-template<typename T>
-inline bool	IsWithin(T c, T lo, T hi) {return c>=lo && c<=hi;}
-inline bool	IsSymbolStart(char c){return IsWithin(c,'a','z') || IsWithin(c,'A','Z')|| c=='_';}
-inline bool	IsSymbolCont(char c){return	 IsSymbolStart(c)||IsWithin(c,'0','9');}
-inline bool	IsNumber(std::ifstream& src)
+class FbxUtil : public FbxMath
 {
-    char c0=0,c1=0; src>>c0; c1=src.peek ();  src.unget();
-    return	(c0=='-' && (c1=='.' || IsWithin(c1,'0','9')))
-        || IsWithin(c0,'0','9');
-}
-inline bool IsNumberStart(const char* s){
-    char c0=s[0],c1=0; if (c0) c1=s[1];
-    return	(c0=='-' && (c0=='.' || IsWithin(c1,'0','9')))
-        || IsWithin(c0,'0','9');
-}
-// todo:IsHex() IsFloat() IsInt()
-//extern bool BeginsSymbol(char c);
-extern bool	IsAlphaNumeric(char c);
-extern bool	IsWhitespace(char c);
-extern bool	IsSeparator(char c);
-extern int	ReadInt(FILE* fp);
-extern float	ReadFloat(FILE* fp);
-extern void	ReadLine(FILE* fp, char* line, int maxlen);
-extern void	SkipLine(std::ifstream& src);
-extern bool	fbxSkipComma(std::ifstream& src);
-extern bool ReadString(FILE* fp, char* txt, int maxlan);
-extern bool	ReadToken(FILE*, char* tok, int maxLen);
-extern void	ExitBlock(FILE* fp);
-extern bool	EnterBlock(
-                   FILE* fp,
-                   char* blockname,
-                   int maxBlockName,
-                   char* insname,
-                   int maxInsName);
-template<typename T>
-T Load(std::ifstream& src);
-
-
-extern bool	ExitBlock(FILE*	fp, char* blockName,int maxBlockName, char* insname, int maxInsName);
-bool	EnterBlock(std::ifstream& src);
-void	ExitBlock2(std::ifstream& src);
-void	ExitBlock(std::ifstream& src);
-void	SkipBlock(std::ifstream& src);
-void	SkipWhitespace(std::ifstream& src);
-
-inline bool	fbxIsNumber(std::ifstream& src)
-{
-    SkipWhitespace(src);
-    while (src.peek()==',') src.get();
-    char c0=0,c1=0; src>>c0; c1=src.peek ();  src.unget();
-    return	(c0=='-' && (c1=='.' || le('0',c1,'9')))
-        || le('0',c0,'9');
-}
-
-
-template<typename T>
-T Read(std::ifstream& src) {
-    T	r; src>> r; fbxSkipComma(src);
-    return r;
-}
-template<>
-inline FBXM::Vector2  Read(std::ifstream& src){
-    return fbxvec2(Read<float>(src),Read<float>(src));
-}
-template<>
-inline FBXM::Vector3  Read(std::ifstream& src){
-    return fbxvec3(Read<float>(src),Read<float>(src),Read<float>(src));
-}
-template<>
-inline FBXM::Vector4  Read(std::ifstream& src){
-    return fbxvec4(Read<float>(src),Read<float>(src),Read<float>(src),Read<float>(src));
-}
-
-template<typename T>
-void	FbxLoadNumericArray(vector<T>&	dst, FbxStream& src)
-{   while(fbxIsNumber(src)) {
-        dst.push_back(Read<T>(src));
+public:
+    template<typename T>
+    static inline bool	IsWithin(T c, T lo, T hi) {return c>=lo && c<=hi;}
+    static inline bool	IsSymbolStart(char c){return IsWithin(c,'a','z') || IsWithin(c,'A','Z')|| c=='_';}
+    static inline bool	IsSymbolCont(char c){return	 IsSymbolStart(c)||IsWithin(c,'0','9');}
+    static inline bool	IsNumber(std::ifstream& src)
+    {
+        char c0=0,c1=0; src>>c0; c1=src.peek ();  src.unget();
+        return	(c0=='-' && (c1=='.' || IsWithin(c1,'0','9')))
+            || IsWithin(c0,'0','9');
     }
-    dst.shrink_to_fit();
+    static inline bool IsNumberStart(const char* s){
+        char c0=s[0],c1=0; if (c0) c1=s[1];
+        return	(c0=='-' && (c0=='.' || IsWithin(c1,'0','9')))
+            || IsWithin(c0,'0','9');
+    }
+    // todo:IsHex() IsFloat() IsInt()
+    //extern bool BeginsSymbol(char c);
+    static bool	IsAlphaNumeric(char c);
+    static bool	IsWhitespace(char c);
+    static bool	IsSeparator(char c);
+    static void	SkipLine(std::ifstream& src);
+    static bool	fbxSkipComma(std::ifstream& src);
+    static bool	EnterBlock(std::ifstream& src);
+    static void	ExitBlock2(std::ifstream& src);
+    static void	ExitBlock(std::ifstream& src);
+    static void	SkipBlock(std::ifstream& src);
+    static void	SkipWhitespace(std::ifstream& src);
+    static void SkipWhitespaceAndSemicolonComments(std::ifstream& src);
+    static void	file_trace_line(FbxStream& src);
+
+
+    template<typename T>
+    static T Read(std::ifstream& src) {
+        T	r; src>> r; fbxSkipComma(src);
+        return r;
+    }
+
+    template<typename T>
+    static void	LoadNumericArray(vector<T>&	dst, FbxStream& src)
+    {   while(IsNumber(src)) {
+            dst.push_back(Read<T>(src));
+        }
+        dst.shrink_to_fit();
+    }
+
+    template<typename T>
+    static bool	ReadString(T& s, std::ifstream& f)
+    {
+        char c; f>>c;
+        if (c!='\"') { f.unget(); return false;}
+        f.getline((char*)&s, sizeof(T)-1, '\"');
+        fbxSkipComma(f);
+        return	true;
+    }
+};
+
+template<>
+inline FBXM::Vector2  FbxUtil::Read(std::ifstream& src){
+    return Vector2(Read<float>(src),Read<float>(src));
+}
+template<>
+inline FbxMath::Vector3  FbxUtil::Read(std::ifstream& src){
+    return Vector3(Read<float>(src),Read<float>(src),Read<float>(src));
+}
+template<>
+inline FbxMath::Vector4  FbxUtil::Read(std::ifstream& src){
+    return Vector4(Read<float>(src),Read<float>(src),Read<float>(src),Read<float>(src));
 }
 
 
-extern bool	EnterBlock(FILE* fp);
-extern float ReadFloat2(FILE* fp);
-template<typename T>
-bool	ReadString(T& s, std::ifstream& f)
-{
-    char c; f>>c;
-    if (c!='\"') { f.unget(); return false;}
-    f.getline((char*)&s, sizeof(T)-1, '\"');
-    fbxSkipComma(f);
-    return	true;
-}
-
-class IWriter {
+class IWriter : public FbxUtil {
 public:
     //TODO, move to abstract interface.
     FILE* fp;
@@ -176,7 +143,7 @@ public:
     }
 
     template<int N>
-    void	value(const FBXM::String<N>& str) { Seperate();fprintf(fp,"\"%s\" ", str.c_str());seperated=false;}
+    void	value(const String<N>& str) { Seperate();fprintf(fp,"\"%s\" ", str.c_str());seperated=false;}
 
 
     template<typename T,int N>
@@ -195,7 +162,7 @@ public:
         endArray();
     }
 
-    void	value(const FBXM::Matrix& mat) {
+    void	value(const Matrix& mat) {
         beginArray(4);
         for (int i=0; i<4; i++) {
             value(mat[i]);
@@ -203,13 +170,13 @@ public:
         endArray();
     }
     // todo, why didn't this just work from underlying std::array..
-    void	value(const FBXM::Vector4& v) {
+    void	value(const Vector4& v) {
         beginArray(4);
         for (int i=0; i<4; i++)
             value(v[i]);
         endArray();
     }
-    void	value(const FBXM::Vector3& v) {
+    void	value(const Vector3& v) {
         beginArray(3);
         for (int i=0; i<3; i++)
             value(v[i]);

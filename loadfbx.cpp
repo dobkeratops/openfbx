@@ -6,20 +6,10 @@ using namespace std;
 void FatalError(const char* ) {
 }
 
-#undef TRACE
-#define TRACE fbx_printf("%s:%d\n", __FILE__,__LINE__);
-void	file_trace_line(FbxStream& src) {
-
-    auto pos=src.tellg();
-    int	i;
-    cout<<"FILE["<<pos<<"]:";
-    for (i=0; i<30; i++) { char c[2];c[0]=src.get();c[1]=0;cout<<c; } cout <<"\n";
-    src.seekg(pos);
-}
 
 inline void	write(IWriter* dst, const FbxScene* scene) {scene->Write(dst);};
 
-class   FbxScene::Loader : public FbxMath
+class   FbxScene::Loader : public FbxUtil
 {
     FbxScene* scene;
     FbxStream& file;
@@ -66,7 +56,7 @@ public:
                     src.get(); while (src.get()!='\"') { };
                 }
                 else
-                if (fbxIsSymbolStart(c)) {
+                if (IsSymbolStart(c)) {
                     char* dst= &hdr->at(0);
                     auto	symbolstart=src.tellg();
                     do { c=src.get();
@@ -77,7 +67,7 @@ public:
                             fbx_printf("Read Subblock %s\n",hdr->c_str());
                             return true;
                         }
-                    } while (fbxIsSymbolCont(c));
+                    } while (IsSymbolCont(c));
                 }
                 else src.get();
             }
@@ -151,9 +141,9 @@ public:
                 newCurve.modelIndex = scene->GetIndexOfModel(mdlName);
                 newCurve.channelIndex = GetChannelIndex(channelName);
 
-                if (keyCount>=0 && fbxIsNumber(file))
+                if (keyCount>=0 && IsNumber(file))
                 {
-                    while (fbxIsNumber(file))
+                    while (IsNumber(file))
                     {
                         auto t=Read<float>(file);
                         auto f=Read<float>(file);
@@ -285,11 +275,11 @@ public:
             if (hdr=="Vertices:")
             {
                 if (!mesh) mesh=scene->CreateMeshForModel(mdl);
-                FbxLoadNumericArray(mesh->Vertices,file);
+                LoadNumericArray(mesh->Vertices,file);
             } else
             if (hdr=="PolygonVertexIndex:")
             {
-                FbxLoadNumericArray(mesh->PolygonVertexIndex,file);
+                LoadNumericArray(mesh->PolygonVertexIndex,file);
             }
             else if (hdr=="LayerElementNormal:")
             {
@@ -301,7 +291,7 @@ public:
                 for (SubBlocks hdr(file);hdr.Get();)
                 {
                     if (hdr=="Normals:") {
-                        FbxLoadNumericArray(mesh->vertexNormals,file);
+                        LoadNumericArray(mesh->vertexNormals,file);
                     }else BlockUnused(hdr);
                 }
             }
@@ -313,9 +303,9 @@ public:
                 for (SubBlocks hdr(file);hdr.Get();)
                 {
                     if (hdr=="UV:") {
-                        FbxLoadNumericArray(layer->UV,file);
+                        LoadNumericArray(layer->UV,file);
                     } else if (hdr=="UVIndex:") {
-                        FbxLoadNumericArray(layer->UVIndex,file);
+                        LoadNumericArray(layer->UVIndex,file);
                     }else BlockUnused(hdr);
                 }
             }
@@ -326,7 +316,7 @@ public:
                 for (SubBlocks hdr(file);hdr.Get();)
                 {
                     if (hdr=="TextureID:") {
-                        FbxLoadNumericArray(layertex->TextureID,file);
+                        LoadNumericArray(layertex->TextureID,file);
                     }else BlockUnused(hdr);
                 }
             }
@@ -368,10 +358,10 @@ public:
         for (SubBlocks hdr(file); hdr.Get();)
         {
             if (hdr=="Indexes:")  {
-                FbxLoadNumericArray<int>(indices, file);
+                LoadNumericArray<int>(indices, file);
             }
             else if (hdr=="Weights:") {
-                FbxLoadNumericArray<float>(weights, file);
+                LoadNumericArray<float>(weights, file);
             }
             else BlockUnused(hdr);
         }

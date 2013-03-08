@@ -98,8 +98,6 @@ public:
         BlockUnused(sb.hdr);
     }
 
-
-
     void
     LoadAnimCurves(Take* dst, const char* mdlName, const char* channelName)
     {
@@ -208,7 +206,7 @@ public:
                     if (hdr=="Model:") {
                         String<256>	mdlName;
                         file >> mdlName;
-                        LoadAnimCurves(take, mdlName.c_str(), "");
+                        LoadAnimCurves(take, mdlName, "");
                     }
                 }
             }

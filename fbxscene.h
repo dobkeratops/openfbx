@@ -9,93 +9,7 @@
 /*
 translator to structured ascii output eg JSON
 */
-class IWriter {
-public:
-    //TODO, move to abstract interface.
-    FILE* fp;
-    IWriter(FILE* _fp) {fp=_fp;seperated=false;}
-    ~IWriter() {}
-    //todo - indent..
-    int x;
-    bool seperated;
-    void	beginMap() { Seperate(),fprintf(fp, "{\n");seperated=true;}
-    void	beginKeyValue(const char* key) {Seperate(); fprintf(fp, "%s:", key); seperated=true;}
-    void	endKeyValue() {}
-    template<typename T>
-    void	keyValue(const char* key, const T& v) { this->beginKeyValue(key); value(v);fprintf(fp,"\n"); endKeyValue();seperated=false;}
-    void	endMap() { fprintf(fp, "}\n");seperated=false;}
 
-    void	beginArray(int size) { Seperate();fprintf(fp, "[");seperated=true;}
-    void	endArray() { fprintf(fp, "]");seperated=false;}
-
-    void    Seperate() { if (!seperated){fprintf(fp,",");seperated=true;};}
-    void	value(int x) { Seperate();fprintf(fp,"%d", x);seperated=false;}
-    void	value(float f) { Seperate();fprintf(fp,"%.5f", f);seperated=false;}
-    void	value(const char* str) {
-        Seperate();
-        fprintf(fp,"\"%s\" ", str);
-        seperated=false;
-    }
-
-    template<typename T>
-    void	keyValueArray(const char* key, const std::vector<T>& src) {
-        beginKeyValue(key);
-        beginArray(src.size());
-        for (auto&n : src) { value(this,n); }
-        endArray();
-        endKeyValue();
-    }
-
-    template<typename T>
-    void	keyValuePtrArray(const char* key, const std::vector<T>& src) {
-        beginKeyValue(key);
-        beginArray(src.size());
-        for (auto pn : src) { value(this,*pn); }
-        endArray();
-        endKeyValue();
-    }
-
-    template<int N>
-    void	value(const FbxString<N>& str) { Seperate();fprintf(fp,"\"%s\" ", str.c_str());seperated=false;}
-
-
-    template<typename T,int N>
-    void	value(const std::array<T,N>& a) {
-        beginArray(a.size());
-        int	i;
-        for (i=0; i<a.size(); i++) value(a[i]);
-        endArray();
-    }
-
-    template<typename T>
-    void	value(const std::vector<T>& a) {
-        beginArray(a.size());
-        int	i;
-        for (i=0; i<a.size(); i++) value(a[i]);
-        endArray();
-    }
-
-    void	value(const FBXM::Matrix& mat) {
-        beginArray(4);
-        for (int i=0; i<4; i++) {
-            value(mat[i]);
-        }
-        endArray();
-    }
-    // todo, why didn't this just work from underlying std::array..
-    void	value(const FBXM::Vector4& v) {
-        beginArray(4);
-        for (int i=0; i<4; i++)
-            value(v[i]);
-        endArray();
-    }
-    void	value(const FBXM::Vector3& v) {
-        beginArray(3);
-        for (int i=0; i<3; i++)
-            value(v[i]);
-        endArray();
-    }
-};
 
 
 class	FbxScene : public FbxMath
@@ -207,13 +121,13 @@ public:
     };
     class Texture {
     public:
-        FbxString<256> filename;
+        String<256> filename;
     };
 
     class	Model
 	{
 	public:
-        FbxString<128>   name;			// todo: seperate array.
+        String<128>   name;			// todo: seperate array.
 		Vector3	localTranslate,localRotate,localScale;
 		float	GetChannel(Channel_t c) const;
 		Matrix  localMatrix;
@@ -260,7 +174,7 @@ public:
         struct	tvalue { float t, value;
             tvalue(float _t, float _v) {t=_t; value=_v;}
         };
-		FbxString<128> boneName; FbxString<128> channelName;
+        String<128> boneName, channelName;
 		int	modelIndex; Channel_t channelIndex;
         std::vector<tvalue> points;
 	};
@@ -271,7 +185,7 @@ public:
 	class	Take 
 	{
 	public:
-		FbxString<256>	name;
+        String<256>	name;
 		std::vector<StaticBonePose> staticBones;
 		std::vector<FCurve>	curves;
         void    Setup();

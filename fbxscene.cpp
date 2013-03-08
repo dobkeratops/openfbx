@@ -162,7 +162,7 @@ FbxScene::Take::Setup(){
 void
 FbxScene::EvalTake(CycleEvalBuffer& dst,  const FbxScene::Take* src, float t) const
 {
-    int	i;
+    size_t	i;
     for (i=0; i<src->curves.size(); i++) {
         EvalFCurve(dst, &src->curves[i],t);
     }
@@ -246,7 +246,7 @@ FbxScene::EvalMatrixArray(Matrix* dst, const CycleEvalBuffer* src) const
 void
 FbxScene::Mesh::PostLoadingSetup() {
     int triStart=0;
-    for (int i=0; i<PolygonVertexIndex.size();i++)
+    for (size_t i=0; i<PolygonVertexIndex.size();i++)
     {
         int pvi=PolygonVertexIndex[i]; if (pvi<0) pvi=~pvi;
         if ((i-triStart)>=2) {
@@ -300,7 +300,7 @@ FbxDumpScene(const FbxScene* scn,IWriter* out)
     out->keyValue("numRootModels",(int)scn->rootModels.size());
     out->beginKeyValue("modelNames");
     out->beginArray(scn->allModels.size());
-    int	i;
+    size_t	i;
     for (i=0; i<scn->allModels.size(); i++) {
         out->value(scn->allModels[i]->name);
     }
@@ -349,7 +349,7 @@ FbxScene::InitCycleEvalBuffer(CycleEvalBuffer& dst)  const
 
     // Clear by taking the rest-pose values
 
-    for (int i=0; i<this->allModels.size(); i++) {
+    for (size_t i=0; i<this->allModels.size(); i++) {
         auto mdl=this->allModels[i];
         auto& d=dst[i];
         for (int ci=0; ci<NumChannels; ci++) {
@@ -374,7 +374,7 @@ FbxScene::Mesh::MakeRenderable()
         }
         bool operator==(const RenderVertexTmp& other) const
         {
-            int i;
+            size_t i;
             if (this->pos!=other.pos) return false;
             for (i=0; i<tex.size();i++)
                 if (this->tex[i]!=other.tex[i])

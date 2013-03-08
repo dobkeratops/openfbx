@@ -7,6 +7,7 @@
 #include <array>
 #include <vector>
 #include <algorithm>
+#include <string.h>
 
 class FbxMath
 {
@@ -71,6 +72,52 @@ public:
     };
 
     static void    EvalSRT(Matrix* dst, const float* ch);
+
+    // todo - util class derived from this
+    template<int N>
+    class	String : public std::array<char,N> {
+    public:
+        String(const char* src) {
+            auto x=10;
+            int len=strlen(src);
+            if (len>(N-1)) len=N-1;
+            memcpy(&this->at(0), src,len);
+            this->at(len)=0;
+        }
+        String() { this->at(0)=0;}
+        operator char* () { return &this->at(0);}
+        const char* c_str() const { return &this->at(0);}
+        bool operator==(const char* txt) { return !strcmp(&this->at(0),txt);}
+    };
+
+    #ifdef TEST
+        #define fbx_printf printf
+        #else
+            static inline void fbx_printf(const char*,...) { };
+        #endif
+
+
+    static void    fbx_printf(const Vector3& v) {
+        fbx_printf("[%.5f %.5f %.5f]",v[0],v[1],v[2]);
+    }
+    static void    fbx_printf(const Vector4& v) {
+        fbx_printf("[%.5f %.5f %.5f %.5f]",v[0],v[1],v[2],v[3]);
+    }
+
+    static void    fbx_printf(const Matrix& m) {
+        int	i;
+        fbx_printf("[");
+        for (i=0; i<4; i++) {
+         fbx_printf(m[i]);
+        }
+        fbx_printf("]\n");
+    }
+
+    template<int N>
+    void	fbx_printf(const String<N>& str) {
+        fbx_printf(&str[0]);
+    }
+
 };
 
 typedef FbxMath FBXM;

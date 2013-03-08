@@ -1,6 +1,7 @@
 #include "fbxutil.h"
 
 
+
 bool isWithin(char v, char lo, char hi){return v>=lo && v<=hi;}
 bool	BeginsSymbol(char c) {
     return	isWithin(c,'a','z') || isWithin(c,'A','Z') || c=='_';
@@ -259,6 +260,8 @@ void	SkipBlock(std::ifstream& src)
 {
     if (EnterBlock(src)) { ExitBlock(src); };
 };
+
+
 
 
 #ifdef TEST_FBXUTIL

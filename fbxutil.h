@@ -14,14 +14,10 @@
 #include "fbxmath.h"
 
 #ifndef ASSERT
-    #define ASSERT(x) { if (!(x)) { fbx_printf("failed %s:%d %s",__FILE__,__LINE__,#x); }}
+    #define ASSERT(x) { if (!(x)) { FBXM::fbx_printf("failed %s:%d %s",__FILE__,__LINE__,#x); }}
 #endif
 
-#ifdef TEST
-#define fbx_printf printf
-#else
-inline void fbx_printf(const char*,...) { };
-#endif
+typedef ifstream FbxStream;
 
 template<typename T, typename... Args>
 std::unique_ptr<T> fbxMakeUnique(Args&&... args)
@@ -35,23 +31,6 @@ template<typename T>
 inline bool	le(T a,T b, T c) {return a<=b && b<=c;};
 inline bool	fbxIsSymbolStart(char c)	{return le('a',c,'z') || le('A',c,'Z')|| c=='_';}
 inline bool	fbxIsSymbolCont(char c)	{return	 fbxIsSymbolStart(c)||le('0',c,'9');}
-template<int N>
-class	FbxString : public std::array<char,N> {
-public:
-
-    FbxString(const char* src) {
-        auto x=10;
-        int len=strlen(src);
-        if (len>(N-1)) len=N-1;
-        memcpy(&this->at(0), src,len);
-        this->at(len)=0;
-    }
-//	FbxString<N>& operator=(const char* src) { if (strlen(src)<(N-1)) strcpy(&(*this)[0], src); return *this;}
-    FbxString() { this->at(0)=0;}
-    operator char* () { return &this->at(0);}
-    const char* c_str() const { return &this->at(0);}
-    bool operator==(const char* txt) { return !strcmp(&this->at(0),txt);}
-};
 
 
 
@@ -129,6 +108,15 @@ inline FBXM::Vector4  Read(std::ifstream& src){
     return fbxvec4(Read<float>(src),Read<float>(src),Read<float>(src),Read<float>(src));
 }
 
+template<typename T>
+void	FbxLoadNumericArray(vector<T>&	dst, FbxStream& src)
+{   while(fbxIsNumber(src)) {
+        dst.push_back(Read<T>(src));
+    }
+    dst.shrink_to_fit();
+}
+
+
 extern bool	EnterBlock(FILE* fp);
 extern float ReadFloat2(FILE* fp);
 template<typename T>
@@ -141,5 +129,92 @@ bool	ReadString(T& s, std::ifstream& f)
     return	true;
 }
 
+class IWriter {
+public:
+    //TODO, move to abstract interface.
+    FILE* fp;
+    IWriter(FILE* _fp) {fp=_fp;seperated=false;}
+    ~IWriter() {}
+    //todo - indent..
+    int x;
+    bool seperated;
+    void	beginMap() { Seperate(),fprintf(fp, "{\n");seperated=true;}
+    void	beginKeyValue(const char* key) {Seperate(); fprintf(fp, "%s:", key); seperated=true;}
+    void	endKeyValue() {}
+    template<typename T>
+    void	keyValue(const char* key, const T& v) { this->beginKeyValue(key); value(v);fprintf(fp,"\n"); endKeyValue();seperated=false;}
+    void	endMap() { fprintf(fp, "}\n");seperated=false;}
+
+    void	beginArray(int size) { Seperate();fprintf(fp, "[");seperated=true;}
+    void	endArray() { fprintf(fp, "]");seperated=false;}
+
+    void    Seperate() { if (!seperated){fprintf(fp,",");seperated=true;};}
+    void	value(int x) { Seperate();fprintf(fp,"%d", x);seperated=false;}
+    void	value(float f) { Seperate();fprintf(fp,"%.5f", f);seperated=false;}
+    void	value(const char* str) {
+        Seperate();
+        fprintf(fp,"\"%s\" ", str);
+        seperated=false;
+    }
+
+    template<typename T>
+    void	keyValueArray(const char* key, const std::vector<T>& src) {
+        beginKeyValue(key);
+        beginArray(src.size());
+        for (auto&n : src) { value(this,n); }
+        endArray();
+        endKeyValue();
+    }
+
+    template<typename T>
+    void	keyValuePtrArray(const char* key, const std::vector<T>& src) {
+        beginKeyValue(key);
+        beginArray(src.size());
+        for (auto pn : src) { value(this,*pn); }
+        endArray();
+        endKeyValue();
+    }
+
+    template<int N>
+    void	value(const FBXM::String<N>& str) { Seperate();fprintf(fp,"\"%s\" ", str.c_str());seperated=false;}
+
+
+    template<typename T,int N>
+    void	value(const std::array<T,N>& a) {
+        beginArray(a.size());
+        int	i;
+        for (i=0; i<a.size(); i++) value(a[i]);
+        endArray();
+    }
+
+    template<typename T>
+    void	value(const std::vector<T>& a) {
+        beginArray(a.size());
+        int	i;
+        for (i=0; i<a.size(); i++) value(a[i]);
+        endArray();
+    }
+
+    void	value(const FBXM::Matrix& mat) {
+        beginArray(4);
+        for (int i=0; i<4; i++) {
+            value(mat[i]);
+        }
+        endArray();
+    }
+    // todo, why didn't this just work from underlying std::array..
+    void	value(const FBXM::Vector4& v) {
+        beginArray(4);
+        for (int i=0; i<4; i++)
+            value(v[i]);
+        endArray();
+    }
+    void	value(const FBXM::Vector3& v) {
+        beginArray(3);
+        for (int i=0; i<3; i++)
+            value(v[i]);
+        endArray();
+    }
+};
 
 #endif

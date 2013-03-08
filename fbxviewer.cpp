@@ -288,17 +288,15 @@ void FbxViewer::Idle() {
 int main(int argc, const char** argv)
 {
 
-	fbx_printf("fbx loader test:-\n");
     FbxScene	scn;
 	ifstream fs;
 	auto srcfile=argv[1];
 	if (!srcfile) {
 		srcfile="data/test.fbx";
     }
-	fbx_printf("%s",srcfile);
 	fs.open(srcfile,ios_base::in);
 	if (!fs) {
-		fbx_printf ("could not open %s",srcfile);
+        printf ("could not open %s",srcfile);
 		return 0;
 	}
     LoadFbx(&scn,fs);

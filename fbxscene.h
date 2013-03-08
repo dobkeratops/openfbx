@@ -241,7 +241,7 @@ public:
     //std::vector<FbxMesh>    meshes;
     std::vector<HrcLink>    hrcLinks;	// parent-child relations, "object-owner"?
     std::vector<Texture>    textures;
-    Extents extents;
+    Extents3 extents;
 
     Model*	CreateModel() { auto mdl=new Model(); allModels.push_back(mdl); return mdl;}
     Mesh*   CreateMeshForModel(Model* mdl);
@@ -252,7 +252,7 @@ public:
 	int  GetIndexOfModel(const char* mdlName);
     void	PostLoadingSetup();
 	static const char*	GetRawModelName(const char* src);	// remove namespace qualifier Model::blah
-    void    UpdateExtents(Extents& ext, const Model* mdl, const Matrix& parent);
+    void    UpdateExtents(Extents3& ext, const Model* mdl, const Matrix& parent);
 
 	struct	FCurve
     {

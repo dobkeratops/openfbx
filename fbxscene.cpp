@@ -10,18 +10,18 @@ void	FbxScene::PostLoadingSetup()
     }
     for (auto& take :this->takes)
         take->Setup();
-    this->extents = FbxExtentsInit();
+    this->extents = Extents3();
     for (auto pModel: this->rootModels)
         this->UpdateExtents(this->extents,pModel,FbxMatrixIdentity());
 
 }
 float FbxScene::Radius()const
 {
-    auto size=extents[1]-extents[0];
+    auto size=extents.max-extents.min;
     return sqrt(size|size)*0.5f;
 }
 FBXM::Vector3 FbxScene::Centre() const{
-    return (extents[0]+extents[1])*0.5f;
+    return (extents.min+extents.max)*0.5f;
 }
 
 float FbxScene::Model::GetChannel(Channel_t c) const{
@@ -33,7 +33,7 @@ float FbxScene::Model::GetChannel(Channel_t c) const{
 void
 FbxScene::Model::CalcLocalMatrixFromSRT()
 {
-	this->localMatrix = FbxMatrixSrt(this->localScale, this->localRotate, this->localTranslate);
+    this->localMatrix = MatrixSrt(this->localScale, this->localRotate, this->localTranslate);
 }
 
 FbxScene::Matrix
@@ -54,14 +54,14 @@ FbxScene::Mesh*	FbxScene::CreateMeshForModel(Model*	mdl)
 }
 
 void
-FbxScene::UpdateExtents(Extents& dst,const Model* mdl, const Matrix& parentMat)
+FbxScene::UpdateExtents(Extents3& dst,const Model* mdl, const Matrix& parentMat)
 {
     auto worldMat=parentMat* mdl->localMatrix;
     auto msh=this->GetMeshOfModel(mdl);
     if (msh){
         for (auto v:msh->Vertices) {
-            auto pos=worldMat * concat(v,1.f);
-            FbxExtentsInclude(dst, FBXM::Vector3({pos[0],pos[1],pos[2]}));
+            auto pos=worldMat * Vector4(v,1.f);
+            dst.include(Vector3(pos[0],pos[1],pos[2]));
         }
     }
     for (auto subMdl:mdl->childModels)
@@ -69,14 +69,14 @@ FbxScene::UpdateExtents(Extents& dst,const Model* mdl, const Matrix& parentMat)
 }
 
 FbxMath::Vector4	FbxScene::s_WeightMapColors[4]= {
-    {{1.f,0.0f,0.5f}},
-    {{0.5f,1.f,0.f}},
-    {{0.f,0.5f,1.f}},
-    {{0.f,1.f,0.5f}},
+    fbxvec4(1.f,0.0f,0.5f,1.f),
+    fbxvec4(0.5f,1.f,0.f,1.f),
+    fbxvec4(0.f,0.5f,1.f,1.f),
+    fbxvec4(0.f,1.f,0.5f,1.f),
 };
 
 FbxScene::Model::Model()
-{ 	weightMapColor=Vector4({0.f,0.f,0.f,0.f});
+{ 	weightMapColor=Vector4(0.f,0.f,0.f,0.f);
 	static int r;
 	r++;
     weightMapColor=s_WeightMapColors[r&3];
@@ -129,8 +129,8 @@ FbxScene::Matrix	FbxScene::Model::GetLocalMatrixPermuteTest(int permute)  const
     FbxScene::Matrix rotx=FbxMatrixRotX(((n&1)?1.f:-1.f)*this->localRotate[0]);
     FbxScene::Matrix roty=FbxMatrixRotY(((n&2)?1.f:-1.f)*this->localRotate[1]);
     FbxScene::Matrix rotz=FbxMatrixRotZ(((n&4)?1.f:-1.f)*this->localRotate[2]);
-    FbxScene::Matrix trans=FbxMatrixTranslate(this->localTranslate);
-    FbxScene::Matrix scale=FbxMatrixScale(this->localScale);
+    FbxScene::Matrix trans=MatrixTranslate(this->localTranslate);
+    FbxScene::Matrix scale=MatrixScale(this->localScale);
 
 	switch (n>>3) {
 	case 0:rot=	roty*rotz*rotx;break;
@@ -294,8 +294,8 @@ void
 FbxDumpScene(const FbxScene* scn,IWriter* out)
 {
     out->beginMap();
-    out->keyValue("min",scn->extents[0]);
-    out->keyValue("max",scn->extents[1]);
+    out->keyValue("min",scn->extents.min);
+    out->keyValue("max",scn->extents.max);
     auto    ident=FbxMatrixIdentity();
     out->keyValue("numRootModels",(int)scn->rootModels.size());
     out->beginKeyValue("modelNames");
@@ -457,7 +457,7 @@ FbxScene::Mesh::MakeRenderable()
         int i;
         for (i=0; i<MaxUVLayers;i++)
             dst.texcoord[i]=src.tex[i];
-        dst.normal=Vector3({0.f,0.f,1.f});
+        dst.normal=Vector3(0.f,0.f,1.f);
         dst.color=0xffffffff;
     }
 

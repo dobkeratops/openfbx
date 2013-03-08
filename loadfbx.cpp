@@ -206,7 +206,7 @@ inline void	write(IWriter* dst, const FbxScene* scn) {scn->Write(dst);};
 
 FbxScene::Vector3	ReadVector3(FbxStream& src) {
     auto x=Read<float>(src), y=Read<float>(src), z=Read<float>(src);
-    return {{x,y,z}};
+    return fbxvec3(x,y,z);
 }
 
 void    LoadFbxConnections(FbxScene* scn, FbxStream& file)

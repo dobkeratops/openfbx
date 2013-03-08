@@ -11,6 +11,8 @@
 #include <fstream>
 #include <memory>
 
+#include "fbxmath.h"
+
 #ifndef ASSERT
     #define ASSERT(x) { if (!(x)) { fbx_printf("failed %s:%d %s",__FILE__,__LINE__,#x); }}
 #endif
@@ -115,20 +117,16 @@ T Read(std::ifstream& src) {
     return r;
 }
 template<>
-inline std::array<float,2>  Read(std::ifstream& src){
-    //std::array<T,N> ret;
-    //for (int i=0; i<N; i++)
-      //  ret[i]=Read<T>(src);
-    //return ret;
-    return std::array<float,2>({{Read<float>(src),Read<float>(src)}});
+inline FBXM::Vector2  Read(std::ifstream& src){
+    return fbxvec2(Read<float>(src),Read<float>(src));
 }
 template<>
-inline std::array<float,3>  Read(std::ifstream& src){
-    //std::array<T,N> ret;
-    //for (int i=0; i<N; i++)
-      //  ret[i]=Read<T>(src);
-    //return ret;
-    return std::array<float,3>({{Read<float>(src),Read<float>(src),Read<float>(src)}});
+inline FBXM::Vector3  Read(std::ifstream& src){
+    return fbxvec3(Read<float>(src),Read<float>(src),Read<float>(src));
+}
+template<>
+inline FBXM::Vector4  Read(std::ifstream& src){
+    return fbxvec4(Read<float>(src),Read<float>(src),Read<float>(src),Read<float>(src));
 }
 
 extern bool	EnterBlock(FILE* fp);

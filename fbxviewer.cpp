@@ -51,17 +51,17 @@ void	FbxViewer::DrawPoint(const Vector3& c, float s) {
 	glBegin(GL_LINES);
 	glColor3f(0.25f, 0.75f,0.75f);
 
-    glVertex( c+Vector3({{-s,0,0}}) );
-    glVertex( c+Vector3({{s,0,0}}) );
-    glVertex( c+Vector3({{0,-s,0}}) );
-    glVertex( c+Vector3({{0,s,0}}) );
-    glVertex( c+Vector3({{0,0,-s}}) );
-    glVertex( c+Vector3({{0,0,s}}) );
+    glVertex( c+fbxvec3(-s,0,0) );
+    glVertex( c+fbxvec3(s,0,0) );
+    glVertex( c+fbxvec3(0,-s,0) );
+    glVertex( c+fbxvec3(0,s,0) );
+    glVertex( c+fbxvec3(0,0,-s) );
+    glVertex( c+fbxvec3(0,0,s) );
 	glEnd();
 } 
 
 void	FbxViewer::DrawPoint(const Vector4& c, float s) {
-    DrawPoint(Vector3({{c[0],c[1],c[2]}}),s);
+    DrawPoint(fbxvec3(c[0],c[1],c[2]),s);
 }
 void	FbxViewer::MeshDrawWeightMap(const FbxScene* scn, const Model* mdl, const Mesh*msh, const Matrix& mat)
 {
@@ -74,7 +74,7 @@ void	FbxViewer::MeshDrawWeightMap(const FbxScene* scn, const Model* mdl, const M
         for (k=0; k<3; k++)
         {
             int	vi=tri.vertex[k];
-            Vector4	weightColor={{0.f,0.f,0.f,0.f}};
+            auto weightColor=fbxvec4(0.f,0.f,0.f,0.f);
             int	bii;
             auto & wmap=msh->vertexWeightMap;
             for (bii=0; bii<wmap[vi].size(); bii++) {
@@ -82,7 +82,7 @@ void	FbxViewer::MeshDrawWeightMap(const FbxScene* scn, const Model* mdl, const M
                 weightColor+=scn->allModels[bi]->weightMapColor * wmap[vi].boneWeight[bii];
             }
             glColor3f(weightColor[0],weightColor[1],weightColor[2]);
-            glVertex( mat * concat(PermuteVertex(msh->Vertices[vi]),1.f));
+            glVertex( mat * Vector4(PermuteVertex(msh->Vertices[vi]),1.f));
         }
     }
     glEnd();
@@ -91,7 +91,7 @@ void	FbxViewer::MeshDrawWeightMap(const FbxScene* scn, const Model* mdl, const M
     glColor3f(1.f,1.f,1.f);
 
     for (auto& v: msh->Vertices) {
-        glVertex(mat *concat(PermuteVertex(v),1.f));
+        glVertex(mat *Vector4(PermuteVertex(v),1.f));
     }
     glEnd();
 
@@ -109,8 +109,8 @@ void	FbxViewer::MeshDrawWire(const FbxScene* scn, const Model* mdl, const Mesh*m
 		{
             int	vs=tri.getVertex(k);
             int	ve=tri.getVertex((k+1)%3);
-            glVertex( mat * concat(PermuteVertex(msh->Vertices[vs]),1.f));
-            glVertex( mat * concat(PermuteVertex(msh->Vertices[ve]),1.f));
+            glVertex( mat * Vector4(PermuteVertex(msh->Vertices[vs]),1.f));
+            glVertex( mat * Vector4(PermuteVertex(msh->Vertices[ve]),1.f));
         }
 	}
 	glEnd();
@@ -121,7 +121,7 @@ void	FbxViewer::MeshDrawPoints(const FbxScene* scn, const Model* mdl, const Mesh
 	glColor3f(1.f,1.f,1.f);
 
     for (auto& v: msh->Vertices) {
-		glVertex(mat *concat(PermuteVertex(v),1.f));
+        glVertex(mat *Vector4(PermuteVertex(v),1.f));
 	}
 	glEnd();
 }
@@ -135,8 +135,8 @@ void	FbxViewer::MeshDrawRenderTriangles(const FbxScene* scn, const Model* mdl, c
         for (k=0; k<3; k++) {
             auto&vs = msh->renderVertex[ tri.getVertex(k)];
             auto&ve = msh->renderVertex[ tri.getVertex(k+1)];
-            glVertex( mat * concat(PermuteVertex(msh->Vertices[vs.posIndex]),1.f));
-            glVertex( mat * concat(PermuteVertex(msh->Vertices[ve.posIndex]),1.f));
+            glVertex( mat * Vector4(PermuteVertex(msh->Vertices[vs.posIndex]),1.f));
+            glVertex( mat * Vector4(PermuteVertex(msh->Vertices[ve.posIndex]),1.f));
         }
     }
     glEnd();
@@ -179,7 +179,7 @@ FbxViewer::DrawCubePoints(float f)
 	float s;
 	for (int i=0; i<8; i++) 
 	{
-        auto pos=FBXM::Vector3 ({{(i&1)?f:-f, (i&2)?f:-f, (i&4)?f:-f}}) ;
+        auto pos=fbxvec3 ((i&1)?f:-f, (i&2)?f:-f, (i&4)?f:-f) ;
         DrawPoint( pos, f*0.05);
 	}
 }
@@ -219,15 +219,15 @@ void	FbxViewer::SceneDraw(const FbxScene* scn,int take,float t)
 
 
 FbxScene*	FbxViewer::s_pFbxScene;
-FbxMath::Vector3	FbxViewer::s_Axis={{0.707f,0.f,0.707f}};
+FbxMath::Vector3	FbxViewer::s_Axis=fbxvec3(0.707f,0.f,0.707f);
 void	FbxViewer::Keyboard(unsigned char key, int, int)
 {
 	switch (key)
 	{
-    case '1': s_Axis=Vector3({{1.f,0.f,0.f}}); break;
-    case '2': s_Axis=Vector3({{0.f,1.f,0.f}}); break;
-    case '3': s_Axis=Vector3({{0.f,0.f,1.f}}); break;
-    case '4': s_Axis=Vector3({{0.707f,0.f,.707f}}); break;
+    case '1': s_Axis=fbxvec3(1.f,0.f,0.f); break;
+    case '2': s_Axis=fbxvec3(0.f,1.f,0.f); break;
+    case '3': s_Axis=fbxvec3(0.f,0.f,1.f); break;
+    case '4': s_Axis=fbxvec3(0.707f,0.f,.707); break;
     case 'q': s_PermuteSrt++; break;
     case 'a': s_PermuteSrt--; break;
     case 'w': s_PermuteSrt+=8; break;

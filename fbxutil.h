@@ -102,9 +102,27 @@ inline bool	fbxIsNumber(std::ifstream& src)
         || le('0',c0,'9');
 }
 
+
 template<typename T>
 T Read(std::ifstream& src) {
-    T	r; src>> r; fbxSkipComma(src); return r;
+    T	r; src>> r; fbxSkipComma(src);
+    return r;
+}
+template<>
+inline std::array<float,2>  Read(std::ifstream& src){
+    //std::array<T,N> ret;
+    //for (int i=0; i<N; i++)
+      //  ret[i]=Read<T>(src);
+    //return ret;
+    return std::array<float,2>({{Read<float>(src),Read<float>(src)}});
+}
+template<>
+inline std::array<float,3>  Read(std::ifstream& src){
+    //std::array<T,N> ret;
+    //for (int i=0; i<N; i++)
+      //  ret[i]=Read<T>(src);
+    //return ret;
+    return std::array<float,3>({{Read<float>(src),Read<float>(src),Read<float>(src)}});
 }
 
 extern bool	EnterBlock(FILE* fp);

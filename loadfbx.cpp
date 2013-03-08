@@ -335,15 +335,11 @@ LoadFbxModel(FbxScene* pscn, FbxScene::Model* mdl, const char modelName[], const
 		{
 			if (!mesh) mesh=pscn->CreateMeshForModel(mdl);
 			int	vertexIndex=0;
-            while (fbxIsNumber(src))
-            {
-                mesh->Vertices.push_back(ReadVector3(src));
-				vertexIndex++;
-			}
+            FbxLoadNumericArray(mesh->Vertices,src);
         } else
 		if (hdr=="PolygonVertexIndex:")
 		{
-            FbxLoadNumericArray<int>(mesh->PolygonVertexIndex,src);
+            FbxLoadNumericArray(mesh->PolygonVertexIndex,src);
         }
         else if (hdr=="LayerElementNormal:")
         {
@@ -355,7 +351,7 @@ LoadFbxModel(FbxScene* pscn, FbxScene::Model* mdl, const char modelName[], const
             for (FbxSubBlocks hdr(src);hdr.Get();)
             {
                 if (hdr=="Normals:") {
-                    FbxLoadNumericArray<float>(mesh->vertexNormals,src);
+                    FbxLoadNumericArray(mesh->vertexNormals,src);
                 }else fbxBlockUnused(hdr);
             }
         }
@@ -367,9 +363,9 @@ LoadFbxModel(FbxScene* pscn, FbxScene::Model* mdl, const char modelName[], const
             for (FbxSubBlocks hdr(src);hdr.Get();)
             {
                 if (hdr=="UV:") {
-                    FbxLoadNumericArray<float>(layer->UV,src);
+                    FbxLoadNumericArray(layer->UV,src);
                 } else if (hdr=="UVIndex:") {
-                    FbxLoadNumericArray<int>(layer->UVIndex,src);
+                    FbxLoadNumericArray(layer->UVIndex,src);
                 }else fbxBlockUnused(hdr);
             }
         }
@@ -380,7 +376,7 @@ LoadFbxModel(FbxScene* pscn, FbxScene::Model* mdl, const char modelName[], const
             for (FbxSubBlocks hdr(src);hdr.Get();)
             {
                 if (hdr=="TextureID:") {
-                    FbxLoadNumericArray<int>(layertex->TextureID,src);
+                    FbxLoadNumericArray(layertex->TextureID,src);
                 }else fbxBlockUnused(hdr);
             }
         }

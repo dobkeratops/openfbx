@@ -152,9 +152,8 @@ public:
 	public:
         class LayerElementUV {
         public:
-            std::vector<float> UV;
+            std::vector<Vector2> UV;
             std::vector<int>    UVIndex;
-            Vector2& getUV(int index) { return (Vector2&)(UV[index*2]);}
         };
         class LayerElementTexture {
         public:
@@ -162,16 +161,14 @@ public:
         };
         class LayerElementNormal {
         public:
-            std::vector<float> Normals;
-            Vector3& getNormal(int index) { return (Vector3&)(Normals[index*3]);}
+            std::vector<Vector3> Normals;
         };
 
         // raw indexed representation of faces & layers from FBX file
         std::vector<Vertex>         Vertices;
         std::vector<int>            PolygonVertexIndex;
 //        LayerElementNormal normals;
-        std::vector<float>        vertexNormals;
-        Vector3& getNormal(int index) {return (Vector3&)(vertexNormals[index*3]);}
+        std::vector<Vector3>        vertexNormals;
         std::vector<LayerElementUV> LayerElementUVs;
         std::vector<LayerElementTexture>            LayerElementTextures;
         // todo -materials, smoothing, vertex-colours, various options in there we've missed

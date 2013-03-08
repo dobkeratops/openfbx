@@ -118,11 +118,12 @@ public:
 	enum RotationOrder_t {
 		RO_XmYZ
 	};
-    struct	Triangle //: public std::array<int,3>
+    struct	Triangle//: public std::array<int,3>
 	{
         std::array<int,3> vertex;
 		Triangle() {};
         Triangle(int i0,int i1, int i2) { auto &t=*this; t.vertex[0]=i0; t.vertex[1]=i1; t.vertex[2]=i2;}
+        int getVertex(int i)const{return vertex[i%3];}
         int texId;
 		void	Write(IWriter*) const;
 	};
@@ -148,6 +149,19 @@ public:
 		void	Write(IWriter*) const;
 	};
 
+    enum {MaxUVLayers=2};
+    enum {MaxBones=4};
+
+    typedef int VertexIndex_t;
+    class   RenderVertex{
+    public:
+        VertexIndex_t posIndex;
+        Vector2 texcoord[MaxUVLayers];
+        Vector3 normal;
+        int     color;
+        // weight map is indexed via 'position'
+    };
+
     class	Mesh
 	{
 	public:
@@ -167,7 +181,7 @@ public:
 
         // raw indexed representation of faces & layers from FBX file
         std::vector<Vertex>         Vertices;
-        std::vector<int>            PolygonVertexIndex;
+        std::vector<VertexIndex_t>            PolygonVertexIndex;
 //        LayerElementNormal normals;
         std::vector<Vector3>        vertexNormals;
         std::vector<LayerElementUV> LayerElementUVs;
@@ -176,12 +190,18 @@ public:
 
         // TODO: split these processed versions out.
         // add preprocess for rendering vertices.
-        std::vector<VertexBoneWeights>  weightMap; // assembled from deformers..
+        std::vector<VertexBoneWeights>  vertexWeightMap; // assembled from deformers..
         std::vector<Triangle>	triangles;
 		// todo: quads, as intermediate for strips
+        std::vector<RenderVertex>   renderVertex;
+        std::vector<Triangle>   renderTriangles;
         Mesh() {}
+    private:
+        void MakeRenderable();
+    public:
 		void	NormalizeWeightMap();
         void	PostLoadingSetup();
+
     };
     class Texture {
     public:
@@ -203,15 +223,14 @@ public:
         bool	isDeformer;
         unique_ptr<Mesh>    mesh;
 
-
-        //int	meshId;
+        Matrix  GetGlobalMatrix() const;
 		Matrix GetLocalMatrix() const;
         //bool	HasMesh() const { return meshId>=0;}
         Model();
         ~Model() {}
 		void	CalcLocalMatrixFromSRT();
         Matrix	GetLocalMatrixPermuteTest(int permute) const;
-        Mesh* GetMesh(){if (!mesh) mesh= fbxMakeUnique<Mesh>(); return mesh.get();}
+        Mesh* GetMesh(){ return mesh.get();}
 	};
 
 	std::string	name;
@@ -223,7 +242,7 @@ public:
     Extents extents;
 
     Model*	CreateModel() { auto mdl=new Model(); allModels.push_back(mdl); return mdl;}
-    Mesh*	CreateMeshForModel(Model* mdl);
+    Mesh*   CreateMeshForModel(Model* mdl);
     //const Mesh*	GetMeshOfModel(const Model* mdl) const { return mdl->meshId>=0?&this->meshes[mdl->meshId]:nullptr;}
     Mesh*	GetMeshOfModel(Model* mdl) { return mdl->mesh.get();}
     const Mesh*	GetMeshOfModel(const Model* mdl) const { return mdl->mesh.get();}

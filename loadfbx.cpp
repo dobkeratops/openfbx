@@ -164,9 +164,9 @@ FbxScene::GetIndexOfModel(const char* mdlName)
 void
 FbxScene::Mesh::NormalizeWeightMap() {
 	//FOR_EACH_IN (wm,this->weightMap)
-	for (size_t n=0; n<this->weightMap.size(); n++)
+    for (size_t n=0; n<this->vertexWeightMap.size(); n++)
 	{
-		auto &wm=this->weightMap[n];
+        auto &wm=this->vertexWeightMap[n];
 		float sumw=0.f; int i; for (i=0; i<wm.num; i++) sumw+=wm.boneWeight[i];
 		if (sumw>0.f)
 			for (i=0; i<wm.num; i++) wm.boneWeight[i]/=sumw;
@@ -208,14 +208,10 @@ inline void	write(IWriter* dst, const FbxScene* scn) {scn->Write(dst);};
 //	char c; src>>c; if (c==',') return true; else src.unget(); return false;
 //}
 
-
-
 FbxScene::Vector3	ReadVector3(FbxStream& src) {
     auto x=Read<float>(src), y=Read<float>(src), z=Read<float>(src);
     return {{x,y,z}};
 }
-
-
 
 void    LoadFbxConnections(FbxScene* scn, FbxStream& file)
 {
@@ -333,7 +329,7 @@ LoadFbxModel(FbxScene* pscn, FbxScene::Model* mdl, const char modelName[], const
         } else
 		if (hdr=="Vertices:")
 		{
-            if (!mesh) mesh=mdl->GetMesh();
+            if (!mesh) mesh=pscn->CreateMeshForModel(mdl);
             FbxLoadNumericArray(mesh->Vertices,src);
         } else
 		if (hdr=="PolygonVertexIndex:")
@@ -439,10 +435,11 @@ void	LoadFbxDeformer(FbxScene* scn, const char* modelName, const char* modelType
 	if (indices.size()>0)
 	{
 		auto mesh=scn->GetMeshOfModel(mdl);
-        if (!mesh->weightMap.size())  mesh->weightMap.resize(mesh->Vertices.size());
+        auto &wmap=mesh->vertexWeightMap;
+        if (!wmap.size())  wmap.resize(mesh->Vertices.size());
 		for (size_t i=0; i<indices.size(); i++)
 		{
-			mesh->weightMap[indices[i]].add(boneIndex, weights[i]);
+            wmap[indices[i]].add(boneIndex, weights[i]);
 		}
     }
 }

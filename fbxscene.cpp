@@ -36,6 +36,12 @@ FbxScene::Model::CalcLocalMatrixFromSRT()
 	this->localMatrix = FbxMatrixSrt(this->localScale, this->localRotate, this->localTranslate);
 }
 
+FbxScene::Matrix
+FbxScene::Model::GetGlobalMatrix() const {
+    if (!parent) return this->localMatrix;
+    else
+        return this->parent->GetGlobalMatrix() * this->localMatrix;
+}
 
 FbxScene::Mesh*	FbxScene::CreateMeshForModel(Model*	mdl)
 {
@@ -56,7 +62,6 @@ FbxScene::UpdateExtents(Extents& dst,const Model* mdl, const Matrix& parentMat)
         for (auto v:msh->Vertices) {
             auto pos=worldMat * concat(v,1.f);
             FbxExtentsInclude(dst, FBXM::Vector3({pos[0],pos[1],pos[2]}));
-
         }
     }
     for (auto subMdl:mdl->childModels)
@@ -172,11 +177,10 @@ FbxScene::EvalFCurve(CycleEvalBuffer& dst, const FbxScene::FCurve* cv, float t) 
         v=cv->points[0].value;
     }else{
         for (;(p+1)<cv->points.end(); p++,p1++){
-         if (p->t<=t && t<=p1->t) {
-             break;
-         }
+            if (p->t<=t && t<=p1->t) {
+                break;
+            }
         }
-
     // just get the value at t=0
     //auto v=cv->points[0].value;
         auto f=(t-p->t)/(p1->t-p->t);
@@ -252,7 +256,7 @@ FbxScene::Mesh::PostLoadingSetup() {
             triStart = i+1;
         }
     }
-
+    MakeRenderable();
 }
 
 void
@@ -352,6 +356,140 @@ FbxScene::InitCycleEvalBuffer(CycleEvalBuffer& dst)  const
             d[ci]=mdl->GetChannel((Channel_t)ci);
         }
     }
+}
+
+void
+FbxScene::Mesh::MakeRenderable()
+{
+    // Find every unique combination of position,texture coordinates & other surface attributes
+    // these are 'RenderVertices'
+    struct RenderVertexTmp {
+        RenderVertexTmp* next=0;
+        int outputIndex=-1;
+        int pos;
+        array<Vector2,MaxUVLayers> tex;
+        RenderVertexTmp(){
+            for (auto& t:this->tex)
+            {t[0]=0.f;t[1]=0.f;}
+        }
+        bool operator==(const RenderVertexTmp& other) const
+        {
+            int i;
+            if (this->pos!=other.pos) return false;
+            for (i=0; i<tex.size();i++)
+                if (this->tex[i]!=other.tex[i])
+                    return false;
+            return true;
+        }
+    };
+
+    // create unique polygon-vertex array.
+    vector<RenderVertexTmp*> rvtPerVertex;
+    vector<RenderVertexTmp*> output;
+    rvtPerVertex.resize(this->Vertices.size());
+    fill_n(rvtPerVertex.begin(),this->Vertices.size(),nullptr);
+
+    ASSERT(this->LayerElementUVs.size()<MaxUVLayers && "uv layers exceeded");
+
+    // [1] Create polygon render vertices
+    vector<RenderVertexTmp> polygonRenderVertex;
+    polygonRenderVertex.resize(this->PolygonVertexIndex.size());
+
+    size_t i,layer;
+    for (i=0; i<PolygonVertexIndex.size();i++) {
+        auto pvi=PolygonVertexIndex[i];
+        if (pvi<0) pvi=~pvi;
+        polygonRenderVertex[i].pos= pvi;
+    }
+
+    for (layer=0; layer<this->LayerElementUVs.size(); layer++) {
+        auto &layeruv=this->LayerElementUVs[layer];
+        ASSERT(layeruv.UVIndex.size()==this->PolygonVertexIndex.size() &&"assumption about layout")
+                for (i=0; i<layeruv.UVIndex.size(); i++) {
+            auto id=layeruv.UVIndex[i];
+            polygonRenderVertex[i].tex[layer]=layeruv.UV[id];
+        }
+    }
+
+    // [2] find unique ones & make translation table
+    vector<int> renderVertexIndex;
+    renderVertexIndex.resize(this->PolygonVertexIndex.size());
+    fill_n(renderVertexIndex.begin(),renderVertexIndex.size(),-1);
+
+    if (false) {
+        // debug: no reduction
+        output.resize(this->PolygonVertexIndex.size());
+        for (i=0; i<this->PolygonVertexIndex.size();i++){
+            renderVertexIndex[i]=i;
+            output[i]=&polygonRenderVertex[i];
+            output[i]->outputIndex=i;
+        }
+    }else {
+        // scan & reduce unique rendervertices;
+        for (i=0; i<this->PolygonVertexIndex.size(); i++)
+        {
+            auto &prv=polygonRenderVertex[i];
+            auto pSrc=&rvtPerVertex[prv.pos];
+            auto src=*pSrc;
+
+            // we need the index of this element..
+            for (; src;src=src->next) {
+                if (*src==prv) {
+                    break;
+                }
+            }
+            if (!src) {
+                src=&prv; // this poly vertex added to output
+                src->outputIndex = output.size();
+                output.push_back(src);
+                // add to list of poly-vertices on the pos-vertex
+                src->next=*pSrc;*pSrc=src;
+            }
+            renderVertexIndex[i]=src->outputIndex;
+        }
+    }
+    // emit 'render-vertices'
+    this->renderVertex.resize(output.size());
+    for (i=0; i<output.size();i++) {
+        auto&src=*output[i];
+        auto&dst=this->renderVertex[i];
+        dst.posIndex=src.pos;
+        int i;
+        for (i=0; i<MaxUVLayers;i++)
+            dst.texcoord[i]=src.tex[i];
+        dst.normal=Vector3({0.f,0.f,1.f});
+        dst.color=0xffffffff;
+    }
+
+
+    // emit triangles
+    for (i=2; i<this->PolygonVertexIndex.size();){
+        int i0=i-2;
+        for (;i<this->PolygonVertexIndex.size();i++) {
+            int pv0=i0;
+            int pv1=i-1;
+            int pv2=i;
+            auto v0=renderVertexIndex[pv0];
+            auto v1=renderVertexIndex[pv1];
+            auto v2=renderVertexIndex[pv2];
+            this->renderTriangles.emplace_back(v0,v1,v2);
+            if (this->PolygonVertexIndex[i]<0)
+                break;
+        }
+        i+=3;
+    }
+        printf("raw tris=%d render tris=%d\n",this->triangles.size(),this->renderTriangles.size());
+        printf("PositionVertices=%d\nRenderVertices=%d\nPolygonVertices=%d\n",
+               this->Vertices.size(),this->renderVertex.size(),this->PolygonVertexIndex.size());
+    // assert..
+        for (int    i=0; i<this->PolygonVertexIndex.size(); i++)
+        {
+            int pvi=this->PolygonVertexIndex[i]; if (pvi<0) pvi=~pvi;
+            int rvi=renderVertexIndex[i];
+            auto &rv=this->renderVertex[rvi];
+            printf("pvi[%d],rvi[%d] pvPos=%d  rvPos=%d\n",i, renderVertexIndex[i], pvi,rv.posIndex);
+        }
+        printf("render vertex creation done");
 }
 
 

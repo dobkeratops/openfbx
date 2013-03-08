@@ -76,9 +76,10 @@ void	FbxViewer::MeshDrawWeightMap(const FbxScene* scn, const Model* mdl, const M
             int	vi=tri.vertex[k];
             Vector4	weightColor={{0.f,0.f,0.f,0.f}};
             int	bii;
-            for (bii=0; bii<msh->weightMap[vi].size(); bii++) {
-                int	bi=msh->weightMap[vi].boneIndex[bii];;
-                weightColor+=scn->allModels[bi]->weightMapColor * msh->weightMap[vi].boneWeight[bii];
+            auto & wmap=msh->vertexWeightMap;
+            for (bii=0; bii<wmap[vi].size(); bii++) {
+                int	bi=wmap[vi].boneIndex[bii];;
+                weightColor+=scn->allModels[bi]->weightMapColor * wmap[vi].boneWeight[bii];
             }
             glColor3f(weightColor[0],weightColor[1],weightColor[2]);
             glVertex( mat * concat(PermuteVertex(msh->Vertices[vi]),1.f));
@@ -106,14 +107,16 @@ void	FbxViewer::MeshDrawWire(const FbxScene* scn, const Model* mdl, const Mesh*m
 		int	k;
 		for (k=0; k<3; k++)
 		{
-            int	vs=tri.vertex[k];
-            int	ve=tri.vertex[(k+1)%3];
+            int	vs=tri.getVertex(k);
+            int	ve=tri.getVertex((k+1)%3);
             glVertex( mat * concat(PermuteVertex(msh->Vertices[vs]),1.f));
             glVertex( mat * concat(PermuteVertex(msh->Vertices[ve]),1.f));
         }
 	}
 	glEnd();
-
+}
+void	FbxViewer::MeshDrawPoints(const FbxScene* scn, const Model* mdl, const Mesh*msh, const Matrix& mat)
+{
 	glBegin(GL_POINTS);
 	glColor3f(1.f,1.f,1.f);
 
@@ -123,6 +126,24 @@ void	FbxViewer::MeshDrawWire(const FbxScene* scn, const Model* mdl, const Mesh*m
 	glEnd();
 }
 
+void	FbxViewer::MeshDrawRenderTriangles(const FbxScene* scn, const Model* mdl, const Mesh*msh, const Matrix& mat){
+    int	i;
+    glBegin(GL_LINES);
+    glColor3f(1.f,1.f,1.f);
+    for (auto & tri: msh->renderTriangles) {
+        int k;
+        for (k=0; k<3; k++) {
+            auto&vs = msh->renderVertex[ tri.getVertex(k)];
+            auto&ve = msh->renderVertex[ tri.getVertex(k+1)];
+            glVertex( mat * concat(PermuteVertex(msh->Vertices[vs.posIndex]),1.f));
+            glVertex( mat * concat(PermuteVertex(msh->Vertices[ve.posIndex]),1.f));
+        }
+    }
+    glEnd();
+
+}
+
+
 void	FbxViewer::ModelDrawMeshes(const FbxScene* scn, const Matrix& parentMat, const Model* mdl)
 {
 	auto lmat=mdl->GetLocalMatrix();
@@ -130,7 +151,8 @@ void	FbxViewer::ModelDrawMeshes(const FbxScene* scn, const Matrix& parentMat, co
 
 	auto msh=scn->GetMeshOfModel(mdl);
     if (msh) {
-        if (msh->weightMap.size())
+        MeshDrawRenderTriangles(scn, mdl,msh, mat);
+        if (msh->vertexWeightMap.size())
             MeshDrawWeightMap(scn, mdl,msh, mat);
         else
             MeshDrawWire(scn, mdl,msh, mat);

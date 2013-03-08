@@ -31,7 +31,7 @@ public:
     static void	MeshDrawWeightMap(const FbxScene* scn, const Model* mdl, const Mesh*msh, const Matrix& mat);
 
     static void	ModelDrawMeshes(const FbxScene* scn, const Matrix& parentMat, const Model* mdl);
-    static void	ModelDrawJoints(const FbxScene* scn, const Matrix& parentMat, const Model* mdl);
+    static void	ModelDrawJoints(const FbxScene* scn, const Matrix& parentMat, const Model* mdl,int depth=0);
     static void DrawCubePoints(float f);
     static void	SceneDraw(const FbxScene* scn,int take, float t);
     static void	Keyboard(unsigned char key, int, int);

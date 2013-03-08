@@ -38,11 +38,8 @@ void	FbxLoadNumericArray(vector<T>&	dst, FbxStream& src)
     dst.shrink_to_fit();
 }
 
-
 void FatalError(const char* ) {
 }
-
-
 
 void
 LoadFbxAnimCurves(FbxScene* scn, FbxStream& src, FbxScene::Take* dst, const char* mdlName, const char* channelName)
@@ -94,7 +91,6 @@ LoadFbxAnimCurves(FbxScene* scn, FbxStream& src, FbxScene::Take* dst, const char
 			}
 
 			dst->curves.push_back(newCurve); // todo emplace_back
-
 		}
 	}
 }
@@ -215,8 +211,6 @@ FbxScene::Vector3	ReadVector3(FbxStream& src) {
 
 void    LoadFbxConnections(FbxScene* scn, FbxStream& file)
 {
-    fbx_printf("Connections{");
-
     for (FbxSubBlocks hdr(file); hdr.Get();)
     {
         if (hdr=="Connect:")
@@ -251,7 +245,6 @@ void    LoadFbxConnections(FbxScene* scn, FbxStream& file)
         } else
             fbxBlockUnused(hdr);
     };
-    fbx_printf("Connections}");
 }
 
 
@@ -277,7 +270,6 @@ LoadFbxTakes(FbxScene* scn, FbxStream& src)
 		}
         take->Setup();
     }
-	fbx_printf("debug, test parsing of LoadFbxTakes");
 }
 
 
@@ -463,8 +455,6 @@ LoadFbxTexture(FbxScene* scn, FbxStream& src)
 void
 LoadFbxObjects(FbxScene* scn, FbxStream& src)
 {
-	fbx_printf("load fbx objects Begin\n");
-
     for (FbxSubBlocks hdr(src); hdr.Get(); )
 	{
 		if (hdr=="Model:")
@@ -489,8 +479,7 @@ LoadFbxObjects(FbxScene* scn, FbxStream& src)
 
         } else fbxBlockUnused(hdr);
 
-	}
-	fbx_printf("loadfbxobjects End\n");
+    }
 }
 
 void

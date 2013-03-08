@@ -478,6 +478,7 @@ FbxScene::Mesh::MakeRenderable()
         }
         i+=3;
     }
+    #ifdef DEBUG
         printf("raw tris=%d render tris=%d\n",this->triangles.size(),this->renderTriangles.size());
         printf("PositionVertices=%d\nRenderVertices=%d\nPolygonVertices=%d\n",
                this->Vertices.size(),this->renderVertex.size(),this->PolygonVertexIndex.size());
@@ -490,6 +491,7 @@ FbxScene::Mesh::MakeRenderable()
             printf("pvi[%d],rvi[%d] pvPos=%d  rvPos=%d\n",i, renderVertexIndex[i], pvi,rv.posIndex);
         }
         printf("render vertex creation done");
+    #endif
 }
 
 

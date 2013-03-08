@@ -182,6 +182,8 @@ public:
         // raw indexed representation of faces & layers from FBX file
         std::vector<Vertex>         Vertices;
         std::vector<VertexIndex_t>            PolygonVertexIndex;
+        VertexIndex_t   GetPolygonVertexIndex(int i) { auto vi=PolygonVertexIndex[i]; if (vi<0) vi=~vi; return vi;}
+        bool            IsFaceEnd(int i)            { return PolygonVertexIndex[i]<0;}
 //        LayerElementNormal normals;
         std::vector<Vector3>        vertexNormals;
         std::vector<LayerElementUV> LayerElementUVs;
@@ -190,9 +192,9 @@ public:
 
         // TODO: split these processed versions out.
         // add preprocess for rendering vertices.
+        // optonal quadlist
         std::vector<VertexBoneWeights>  vertexWeightMap; // assembled from deformers..
         std::vector<Triangle>	triangles;
-		// todo: quads, as intermediate for strips
         std::vector<RenderVertex>   renderVertex;
         std::vector<Triangle>   renderTriangles;
         Mesh() {}

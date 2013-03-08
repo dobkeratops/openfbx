@@ -140,9 +140,7 @@ void	FbxViewer::MeshDrawRenderTriangles(const FbxScene* scn, const Model* mdl, c
         }
     }
     glEnd();
-
 }
-
 
 void	FbxViewer::ModelDrawMeshes(const FbxScene* scn, const Matrix& parentMat, const Model* mdl)
 {
@@ -160,18 +158,20 @@ void	FbxViewer::ModelDrawMeshes(const FbxScene* scn, const Matrix& parentMat, co
 
     }
     for(auto& subMdl : mdl->childModels) ModelDrawMeshes(scn, mat, subMdl);
-
 }
-void	FbxViewer::ModelDrawJoints(const FbxScene* scn, const Matrix& parentMat, const Model* mdl)
+
+void	FbxViewer::ModelDrawJoints(const FbxScene* scn, const Matrix& parentMat, const Model* mdl,int depth)
 {
-	auto lmat=mdl->GetLocalMatrix();
-    auto  mat = parentMat*mdl->GetLocalMatrix() ;
-    JointDraw(parentMat,mat,  0.05f);
-
-	
-    for( auto& subMdl : mdl->childModels) ModelDrawJoints(scn, mat, subMdl);
+    auto axisSize=0.25f*scn->Radius() / sqrt(1+scn->allModels.size());
+    auto lmat=mdl->GetLocalMatrix();
+    auto  mat = parentMat*mdl->GetLocalMatrix();
+    MatrixDraw(mat, axisSize);
+    if (depth>0)
+        JointDraw(parentMat,mat,  0.05f);
+    for( auto& subMdl : mdl->childModels) {
+        ModelDrawJoints(scn, mat, subMdl,depth+1);
+    }
 }
-
 
 void
 FbxViewer::DrawCubePoints(float f)
@@ -187,7 +187,6 @@ FbxViewer::DrawCubePoints(float f)
 void	FbxViewer::SceneDraw(const FbxScene* scn,int take,float t)
 {
     auto    mat=FbxMatrixIdentity();
-	DrawCubePoints(1.0);
 
 	glEnable (GL_DEPTH_TEST);
 	for (auto& mp :scn->rootModels)

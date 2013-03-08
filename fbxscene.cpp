@@ -495,3 +495,38 @@ FbxScene::Mesh::MakeRenderable()
 }
 
 
+FbxScene::Model*
+FbxScene::GetModel(const char* mdlName)
+{
+
+    for(auto mp :allModels)
+    { if (mp->name==mdlName) return mp;
+    }
+    return  nullptr;
+}
+
+int
+FbxScene::GetIndexOfModel(const char* mdlName)
+{
+    int i=0;
+    for (auto pm :allModels)
+    {	if (pm->name==mdlName) return i;
+        i++;
+    }
+    return  -1;
+}
+
+void
+FbxScene::Mesh::NormalizeWeightMap() {
+    //FOR_EACH_IN (wm,this->weightMap)
+    for (size_t n=0; n<this->vertexWeightMap.size(); n++)
+    {
+        auto &wm=this->vertexWeightMap[n];
+        float sumw=0.f; int i; for (i=0; i<wm.num; i++) sumw+=wm.boneWeight[i];
+        if (sumw>0.f)
+            for (i=0; i<wm.num; i++) wm.boneWeight[i]/=sumw;
+    }
+}
+
+
+

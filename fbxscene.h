@@ -101,7 +101,7 @@ public:
 class	FbxScene : public FbxMath
 {
 public:
-
+    class   Loader;
 	static Channel_t	GetChannelIndex(const char* name);
 	static const char* getChannelName(int index);
 	
@@ -234,6 +234,7 @@ public:
         Matrix	GetLocalMatrixPermuteTest(int permute) const;
         Mesh* GetMesh(){ return mesh.get();}
 	};
+    typedef std::vector<std::array<float, NumChannels> > CycleEvalBuffer;
 
 	std::string	name;
     std::vector<Model*> allModels;	// collection owns all models
@@ -282,7 +283,6 @@ public:
     ~FbxScene () { for (auto& m :this->allModels) delete m;}
 
 
-    typedef std::vector<std::array<float, NumChannels> > CycleEvalBuffer;
 	void	InitCycleEvalBuffer(CycleEvalBuffer& dst) const;
 	void	EvalTake(CycleEvalBuffer& dst, const Take* src, float t) const;	// todo - accumulation
 	void	EvalFCurve(CycleEvalBuffer& dst, const FCurve* curve, float t) const;

@@ -241,7 +241,7 @@ FbxScene::FbxMesh::PostLoadingSetup() {
     {
         int pvi=PolygonVertexIndex[i]; if (pvi<0) pvi=~pvi;
         if ((i-triStart)>=2) {
-            triangles.emplace_back(PolygonVertexIndex[triStart],PolygonVertexIndex[triStart+1],pvi);
+            triangles.emplace_back(PolygonVertexIndex[triStart],PolygonVertexIndex[i-1],pvi);
         }
         if (PolygonVertexIndex[i]<0){
             triStart = i+1;

@@ -61,7 +61,6 @@ public:
             fbxSkipComma();
             return*this;
         }
-
         template<typename T>
         void	LoadNumericArray(std::vector<T>&	dst)
         {   while(IsNumber()) {
@@ -86,19 +85,6 @@ public:
             for (int i=0; i<N;i++) (*this)>>dst[i];
             return *this;
         }
-/*
-        inline Stream& operator>>(Vector2& dst){
-            return (*this)>>dst[0]>>dst[1]>>dst[2];
-        }
-        inline Stream& operator>>(Vector3& dst){
-            return (*this)>>dst[0]>>dst[1]>>dst[2];
-
-        }
-        inline Stream& operator>>(Vector4& dst){
-            return (*this)>>dst[0]>>dst[1]>>dst[2]>>dst[3];
-        }
-*/
-
     };
 };
 

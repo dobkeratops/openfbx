@@ -138,7 +138,7 @@ public:
         bool operator==(const char* txt) { return !strcmp(&this->at(0),txt);}
     };
 
-    #ifdef TEST
+    #ifdef DEBUG
         #define fbx_printf printf
         #else
             static inline void fbx_printf(const char*,...) { };
@@ -166,6 +166,11 @@ public:
         fbx_printf(&str[0]);
     }
 };
+template<typename F,typename T,int N>
+F& operator<<(F& dst, FbxMath::Vec<T,N>& src){
+    dst<<"[";for (auto &f:src) dst<<f<<" "; dst<<"]";
+    return dst;
+}
 
 inline FbxMath::Matrix FbxMath::Matrix::Identity() {
     return Matrix(Vector4::Axis<0>(),Vector4::Axis<1>(),Vector4::Axis<2>(),Vector4::Axis<3>());

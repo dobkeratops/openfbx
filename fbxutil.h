@@ -65,7 +65,9 @@ public:
         template<typename T>
         void	LoadNumericArray(std::vector<T>&	dst)
         {   while(IsNumber()) {
-                dst.push_back(Read<T>());
+                auto v=Read<T>();
+                std::cout<<v;
+                dst.push_back(v);
             }
             dst.shrink_to_fit();
         }
@@ -80,11 +82,11 @@ public:
             return	true;
         }
         template<typename T,int N>
-        inline Stream& operator>>(std::array<T,N>& dst){
+        inline Stream& operator>>(Vec<T,N>& dst){
             for (int i=0; i<N;i++) (*this)>>dst[i];
             return *this;
         }
-
+/*
         inline Stream& operator>>(Vector2& dst){
             return (*this)>>dst[0]>>dst[1]>>dst[2];
         }
@@ -95,7 +97,7 @@ public:
         inline Stream& operator>>(Vector4& dst){
             return (*this)>>dst[0]>>dst[1]>>dst[2]>>dst[3];
         }
-
+*/
 
     };
 };

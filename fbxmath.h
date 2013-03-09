@@ -12,32 +12,67 @@
 class FbxMath
 {
 public:
-    struct Vector2 :public std::array<float,2> {
-        Vector2(){};
-        Vector2(float x, float y) : std::array<float,2>({{x,y}}) {}////{this->set(x,y);}
-        explicit Vector2(float f) :Vector2(f,f){}
-    };
-    struct Vector3 :public std::array<float,3> {
-        Vector3(){};
-        Vector3(float x, float y,float z) : std::array<float,3>({{x,y,z}}){}
-        explicit Vector3(float f) :Vector3(f,f,f){};
-    };
-    struct Vector4 :public std::array<float,4> {
-        Vector4(){};
-        Vector4(float x, float y,float z,float w) :std::array<float,4>({{x,y,z,w}}){}
-        Vector4(const Vector3& xyz,float w) :Vector4(xyz[0],xyz[1],xyz[2],w){}
-        explicit Vector4(float f) :Vector4(f,f,f,f){}
-        template<int n>
-        static Vector4 Axis(float f=1.f){return Vector4(n==0?f:0.f,n==1?f:0.f,n==2?f:0.f,n==3?f:0.f);}
-        inline Vector4& operator+=(const Vector4& b)  { (*this)[0]+=b[0];(*this)[1]+=b[1];(*this)[2]+=b[2];(*this)[3]+=b[3]; return *this; }
+    template<typename T,int N>
+    struct Vec {
+        T data[N];
 
+        //constructors
+        Vec(){}
+        Vec(const T& v){for (int i=0;i<N;i++) data[i]=v;}
+        Vec(const T& x,const T& y){static_assert(N==2,"xy");data[0]=x;data[1]=y;}
+        Vec(const T& x,const T& y,const T&z){static_assert(N==3,"xyz");data[0]=x;data[1]=y;data[2]=z;}
+        Vec(const T& x,const T& y,const T&z,const T&w){static_assert(N==4,"xyzw");data[0]=x;data[1]=y;data[2]=z;data[3]=w;}
+        Vec(const Vec<T,N-1>& first,const T& last){for (int i=0;i<(N-1);i++) data[i]=first[i]; data[N-1]=last;}
+        Vec(const T* src) {load(src);}
+
+        // conversions
+        template<typename Y>    void load(const Y* src) {for (int i=0;i<N;i++){data[i]=src[i];}}
+        template<typename Y>    void store(Y* dst) const{for (int i=0; i<N;i++){dst[i]=data[i];}}
+        template<typename Y>    void load_xyz(const Y& src){static_assert(N>=3,"xyz");data[0]=src.x;data[1]=src.y;data[2]=src.z;}
+        template<typename Y>    void store_xyz(Y& dst)const{static_assert(N>=3,"xyz");dst.x=data[0];dst.y=data[1];dst.z=data[2];}
+        Vec<T,3> xyz()const {static_assert(N>=3,"need 3"); return Vec<T,3>(data[0],data[1],data[2]);}
+        Vec<T,2> xy()const  {static_assert(N>=2,"need 2"); return Vec<T,2>(data[0],data[1]);}
+        Vec<T,2> xz()const  {static_assert(N>=2,"need 2"); return Vec<T,2>(data[0],data[2]);}
+        Vec<T,2> yz()const  {static_assert(N>=2,"need 2"); return Vec<T,2>(data[1],data[2]);}
+
+        // accessors
+        template<typename Y>Vec(const Y& src){static_assert(src.size()==N,""); }
+        T&          operator[](int i)   {return data[i];}
+        const T*    begin() const       {return data;}
+        const T*    end() const         {return data+N;}
+        const T&    operator[](int i)const {return data[i];}
+        T* begin()          {return data;}
+        T* end()            {return data+N;}
+        size_t size()const  {return N;}
+
+        // arithmetic
+        inline Vec<T,N> operator*(T f)const                 { Vec<T,N> r;for (int i=0;i<N;i++) r[i]=data[i]*f;return r; }
+        inline Vec<T,N> operator+(const Vec<T,N>& b)const   { Vec<T,N> r;for (int i=0;i<N;i++) r[i]=data[i]+b[i];return r;  }
+        inline Vec<T,N> operator-(const Vec<T,N>& b)const   { Vec<T,N> r;for (int i=0;i<N;i++) r[i]=data[i]-b[i];return r;  }
+        inline T operator|(const Vec<T,N>& b)const      {T sum=0.f; for(int i=0;i<N;i++) sum+=data[i]*b[i]; return sum;}
+        inline Vec<T,N>& operator*=(const T& f)         { for (int i=0;i<N;i++) data[i]*=f; return *this; }
+        inline Vec<T,N>& operator+=(const Vec<T,N>& v)  { for (int i=0;i<N;i++) data[i]+=v[i]; return *this; }
+        inline Vec<T,N>& operator-=(const Vec<T,N>& v)  { for (int i=0;i<N;i++) data[i]-=v[i]; return *this; }
+        inline Vec<T,N>& operator/=(const Vec<T,N>& v)  { for (int i=0;i<N;i++) data[i]/=v[i]; return *this; }
+        inline T length()const              { return sqrt(*this|*this);}
+        inline Vec<T,N>	normalized() const  {return (*this)*(1.f/this->length());}
+        inline bool operator==(const Vec<T,N>& b) const { for (int i=0; i<N;i++) {if (data[i]!=b[i]) return false;}return true;}
+        inline bool operator!=(const Vec<T,N>& b) const { return !operator==(b);}
+        Vec<T,N>	operator^(const Vec<T,N>& b)const   {static_assert(N==3,"crossprod needs 3elem vec"); auto&a=*this;return	Vector3(a[1]*b[2]-a[2]*b[1],	a[2]*b[0]-a[0]*b[2],	a[0]*b[1]-a[1]*b[0]);}
+        template<int A>
+        static Vec<T,N> Axis(T f=1.f){Vec<T,N> r;for(int i=0;i<N;i++){r[i]=(i==A)?f:0.f;};return r;}
     };
-    struct Matrix: public std::array<Vector4,4> {
+    typedef Vec<float,2>    Vector2;
+    typedef Vec<float,3>    Vector3;
+    typedef Vec<float,4>    Vector4;
+    struct Matrix :public Vec<Vector4,4>{
+        // constructors
         Matrix(){}
-        Matrix(const Vector4& a,const Vector4& b,const Vector4& c,const Vector4& d)
-            :std::array<Vector4,4>({{a,b,c,d}}) {}
+        Matrix(const Vector4&a,const Vector4&b,const Vector4&c,const Vector4&d):Vec<Vector4,4>(a,b,c,d){};
         Matrix(const Vector3& a,const Vector3& b,const Vector3& c,const Vector3& d)
-            :Matrix(Vector4(a,0.f),Vector4(b,0.f),Vector4(c,0.f),Vector4(d,1.f)){}
+            :Vec<Vector4,4>(Vector4(a,0.f),Vector4(b,0.f),Vector4(c,0.f),Vector4(d,1.f)){}
+
+        // create matrices
         static Matrix    Rot_pZ_mY_pX(const Vector3& ang);
         static Matrix    Translate(const Vector3 trans);
         static Matrix    Scale(const Vector3   scale);
@@ -45,18 +80,32 @@ public:
         static Matrix    LookAt(Vector3 pos,Vector3 fwd,Vector3 up);
         template<int axis> static Matrix Rotate(float angle);
         static Matrix   Identity();
+
+        // arithmetic
+        Matrix  operator*(const Matrix& b)const  {auto&m=*this; return Matrix(m * b[0], m* b[1], m * b[2], m * b[3]);}
+        Vector4 operator*(const Vector4& b) const  {auto&a=*this; return a[0]*b[0]+a[1]*b[1]+a[2]*b[2]+a[3]*b[3]; };
+        Vector3 operator*(const Vector3& b) const  {auto&a=*this; return (a[0]*b[0]+a[1]*b[1]+a[2]*b[2]).xyz(); };
+        void    SetSRT(const float* ch);
     };
     //typedef std::array<Vector4,4> Matrix;
-    inline static Vector3 Min(const Vector3&a,const Vector3& b);
-    inline static Vector3 Max(const Vector3&a,const Vector3& b);
-    typedef std::array<Vector3,2> Extents;
-    struct Extents3 {
-        Vector3 min,max;
-        Extents3(const Vector3& _min=Vector3(FLT_MAX),const Vector3& _max=Vector3(-FLT_MAX)){
+    static Vector3 Min(const Vector3& a, const Vector3& b){    return Vector3( std::min(a[0],b[0]),std::min(a[1],b[1]),std::min(a[2],b[2]) );}
+    static Vector3 Max(const Vector3& a, const Vector3& b){    return Vector3( std::max(a[0],b[0]),std::max(a[1],b[1]),std::max(a[2],b[2]) );}
+
+    //typedef std::array<Vector3,2> Extents;
+    template<typename V>
+    struct Extents {
+        V min,max;
+        Extents(const V& _min=V(FLT_MAX),const V& _max=V(-FLT_MAX)){
             min=_min;max=_max;
         };
-        void include(const Vector3& v){min=Min(min,v);max=Max(max,v);};
+        V centre() const{return (min+max)*0.5f;}
+        V size() const{return (max-min);}
+        void include(const V& v){min=Min(min,v);max=Max(max,v);};
+        void include(const Extents& other) { min=Min(min,other.min);max=Max(max,other.max);}
     };
+    typedef Extents<Vector2> Extents2;
+    typedef Extents<Vector3> Extents3;
+    typedef Extents<Vector4> Extents4;
 
     enum Channel_t {
         Transform_T_X,
@@ -71,7 +120,6 @@ public:
         NumChannels
     };
 
-    static void    EvalSRT(Matrix* dst, const float* ch);
 
     // todo - util class derived from this
     template<int N>
@@ -117,40 +165,14 @@ public:
     void	fbx_printf(const String<N>& str) {
         fbx_printf(&str[0]);
     }
-
 };
 
-typedef FbxMath FBXM;
-inline FBXM::Vector2 fbxvec2(float x, float y) {return FBXM::Vector2(x,y);}
-inline FBXM::Vector3 fbxvec3(float x, float y, float z) {return FBXM::Vector3(x,y,z);}
-inline FBXM::Vector4 fbxvec4(float x, float y, float z,float w) {return FBXM::Vector4(x,y,z,w);}
-inline FBXM::Matrix fbxmatrix(const FBXM::Vector4& ax, const FBXM::Vector4& ay,const FBXM::Vector4& az,const FBXM::Vector4& aw) {return FBXM::Matrix(ax,ay,az,aw);}
-
-//inline FBXM::Vector3 FbxVector3(float x,float y,float z) {return FBXM::Vector3({{x,y,z}});}
-using namespace std;
-
-inline FBXM::Vector3 operator*(const FBXM::Vector3& a,float f)  { return fbxvec3(a[0]*f,a[1]*f,a[2]*f); }
-inline FBXM::Vector3 operator+(const FBXM::Vector3& a,const FBXM::Vector3& b)  { return fbxvec3(a[0]+b[0], a[1]+b[1], a[2]+b[2]); }
-inline FBXM::Vector3 operator-(const FBXM::Vector3& a,const FBXM::Vector3& b)  { return fbxvec3(a[0]-b[0], a[1]-b[1], a[2]-b[2]); }
-inline FBXM::Vector3& operator*=(FBXM::Vector3& a,float f)  { a[0]=a[0]*f; a[1]=a[1]*f; a[2]=a[2]*f; return a; }
-inline FBXM::Vector4 operator*(const FBXM::Vector4& a,float f)  { return fbxvec4(a[0]*f,a[1]*f,a[2]*f,a[3]*f); }
-inline FBXM::Vector4 operator+(const FBXM::Vector4& a,const FBXM::Vector4& b)  { return fbxvec4(a[0]+b[0], a[1]+b[1], a[2]+b[2], a[3]+b[3]); }
-inline FBXM::Vector4 operator-(const FBXM::Vector4& a,const FBXM::Vector4& b)  { return fbxvec4(a[0]-b[0], a[1]-b[1], a[2]-b[2], a[3]-b[3]); }
-
-inline FBXM::Vector4 operator*(const FBXM::Matrix& a,const FBXM::Vector4& b)  { return a[0]*b[0]+a[1]*b[1]+a[2]*b[2]+a[3]*b[3]; };
-inline FBXM::Matrix  operator*(const FBXM::Matrix& m,const FBXM::Matrix& b)  { return fbxmatrix(m * b[0], m* b[1], m * b[2], m * b[3]);}
-inline FBXM::Vector3	operator^(const FBXM::Vector3& a,const FBXM::Vector3& b){return	fbxvec3(a[1]*b[2]-a[2]*b[1],	a[2]*b[0]-a[0]*b[2],	a[0]*b[1]-a[1]*b[0]);}
-inline float			operator|(const FBXM::Vector4& a,const FBXM::Vector4& b) {return a[0]*b[0]+a[1]*b[1]+a[2]*b[2]+a[3]*b[3];}
-inline float			operator|(const FBXM::Vector3& a,const FBXM::Vector3& b) {return a[0]*b[0]+a[1]*b[1]+a[2]*b[2];}
-inline float length(const FBXM::Vector3& v){ return sqrt(v|v);}
-inline FBXM::Vector3	normalize(const FBXM::Vector3& a) {return a*(1.f/length(a));}
-
-inline FBXM::Matrix FBXM::Matrix::Identity() {
+inline FbxMath::Matrix FbxMath::Matrix::Identity() {
     return Matrix(Vector4::Axis<0>(),Vector4::Axis<1>(),Vector4::Axis<2>(),Vector4::Axis<3>());
 }
 
 template<int axis>
-FBXM::Matrix	FBXM::Matrix::Rotate(float angle) {
+FbxMath::Matrix	FbxMath::Matrix::Rotate(float angle) {
     auto u=(axis==0)?1:0;
     auto v=(axis==2)?1:2;
     float s=sin(angle),c=cos(angle);
@@ -162,9 +184,5 @@ FBXM::Matrix	FBXM::Matrix::Rotate(float angle) {
     return ret;
 };
 
-void	EvalSRT(FBXM::Matrix* dst, const float* channels);
-
-inline FBXM::Vector3 FBXM::Min(const Vector3& a, const Vector3& b){    return Vector3( min(a[0],b[0]),min(a[1],b[1]),min(a[2],b[2]) );}
-inline FBXM::Vector3 FBXM::Max(const Vector3& a, const Vector3& b){    return Vector3( max(a[0],b[0]),max(a[1],b[1]),max(a[2],b[2]) );}
 
 #endif // FBXMATH_H

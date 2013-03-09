@@ -10,10 +10,9 @@
 
 
 #ifndef ASSERT
-    #define ASSERT(x) { if (!(x)) { FBXM::fbx_printf("failed %s:%d %s",__FILE__,__LINE__,#x); }}
+    #define ASSERT(x) { if (!(x)) { fbx_printf("failed %s:%d %s",__FILE__,__LINE__,#x); }}
 #endif
 
-typedef ifstream FbxStream;
 
 template<typename T, typename... Args>
 std::unique_ptr<T> fbxMakeUnique(Args&&... args)
@@ -34,7 +33,7 @@ public:
     static bool	IsAlphaNumeric(char c);
     static bool	IsWhitespace(char c);
     static bool	IsSeparator(char c);
-    class Stream : public ifstream{
+    class Stream : public std::ifstream{
         // todo- mayinclude line,nesting depth?
     public:
 //        Stream(std::ifstream& f) :src(f){};
@@ -53,18 +52,18 @@ public:
             return r;
         }
         Stream& operator>>(float& f) {
-            ifstream::operator>>(f);
+            std::ifstream::operator>>(f);
             fbxSkipComma();
             return*this;
         }
         Stream& operator>>(int& n) {
-            ifstream::operator>>(n);
+            std::ifstream::operator>>(n);
             fbxSkipComma();
             return*this;
         }
 
         template<typename T>
-        void	LoadNumericArray(vector<T>&	dst)
+        void	LoadNumericArray(std::vector<T>&	dst)
         {   while(IsNumber()) {
                 dst.push_back(Read<T>());
             }
@@ -80,26 +79,27 @@ public:
             fbxSkipComma();
             return	true;
         }
+        template<typename T,int N>
+        inline Stream& operator>>(std::array<T,N>& dst){
+            for (int i=0; i<N;i++) (*this)>>dst[i];
+            return *this;
+        }
+
+        inline Stream& operator>>(Vector2& dst){
+            return (*this)>>dst[0]>>dst[1]>>dst[2];
+        }
+        inline Stream& operator>>(Vector3& dst){
+            return (*this)>>dst[0]>>dst[1]>>dst[2];
+
+        }
+        inline Stream& operator>>(Vector4& dst){
+            return (*this)>>dst[0]>>dst[1]>>dst[2]>>dst[3];
+        }
+
+
     };
 };
 
-template<typename T,int N>
-inline FbxUtil::Stream& operator>>(FbxUtil::Stream& src, std::array<T,N>& dst){
-    for (int i=0; i<N;i++) src>>dst[i];
-}
-
-inline FbxUtil::Stream& operator>>(FbxUtil::Stream& src, FBXM::Vector2& dst){
-    src>>dst[0]>>dst[1]>>dst[2];
-    return src;
-}
-inline FbxUtil::Stream& operator>>(FbxUtil::Stream& src, FBXM::Vector3& dst){
-    src>>dst[0]>>dst[1]>>dst[2];
-    return src;
-}
-inline FbxUtil::Stream& operator>>(FbxUtil::Stream& src, FBXM::Vector4& dst){
-    src>>dst[0]>>dst[1]>>dst[2]>>dst[3];
-    return src;
-}
 
 
 template<int N>

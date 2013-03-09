@@ -16,7 +16,7 @@
 #include <GL/glut.h>
 #endif
 
-class   FbxViewer : FbxScene {
+class   FbxViewer : public FbxScene {
 public:
     static void	glVertex(const Vertex& v);
     static void	glVertex(const Vector4& v);

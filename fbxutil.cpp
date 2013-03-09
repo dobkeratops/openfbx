@@ -92,8 +92,8 @@ void	FbxUtil::Stream::file_trace_line() {
 
     auto pos=tellg();
     int	i;
-    cout<<"FILE["<<pos<<"]:";
-    for (i=0; i<30; i++) { char c[2];c[0]=get();c[1]=0;cout<<c; } cout <<"\n";
+    std::cout<<"FILE["<<pos<<"]:";
+    for (i=0; i<30; i++) { char c[2];c[0]=get();c[1]=0;std::cout<<c; } std::cout <<"\n";
     seekg(pos);
 }
 

@@ -137,14 +137,14 @@ public:
         std::vector<Model*>    childModels;
         static	PropertyDef<Model>	s_Properties[];
         bool	isDeformer;
-        unique_ptr<Mesh>    mesh;
+        std::unique_ptr<Mesh>    mesh;
 
         Matrix  GetGlobalMatrix() const;
 		Matrix GetLocalMatrix() const;
         //bool	HasMesh() const { return meshId>=0;}
         Model();
         ~Model() {}
-		void	CalcLocalMatrixFromSRT();
+        void CalcLocalMatrixFromSRT();
         Matrix	GetLocalMatrixPermuteTest(int permute) const;
         Mesh* GetMesh(){ return mesh.get();}
         void Dump(const Matrix& parent,int depth,IWriter* out);

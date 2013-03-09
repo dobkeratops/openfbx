@@ -29,7 +29,7 @@ void	FbxViewer::MatrixDraw(const Matrix& mat, float s)
     glEnd();
 }
 
-FBXM::Vector3 FbxViewer::PermuteVertex(const Vector3& v)
+FbxMath::Vector3 FbxViewer::PermuteVertex(const Vector3& v)
 {
 	return	v;
 }
@@ -51,17 +51,17 @@ void	FbxViewer::DrawPoint(const Vector3& c, float s) {
 	glBegin(GL_LINES);
 	glColor3f(0.25f, 0.75f,0.75f);
 
-    glVertex( c+fbxvec3(-s,0,0) );
-    glVertex( c+fbxvec3(s,0,0) );
-    glVertex( c+fbxvec3(0,-s,0) );
-    glVertex( c+fbxvec3(0,s,0) );
-    glVertex( c+fbxvec3(0,0,-s) );
-    glVertex( c+fbxvec3(0,0,s) );
+    glVertex( c+Vector3(-s,0,0) );
+    glVertex( c+Vector3(s,0,0) );
+    glVertex( c+Vector3(0,-s,0) );
+    glVertex( c+Vector3(0,s,0) );
+    glVertex( c+Vector3(0,0,-s) );
+    glVertex( c+Vector3(0,0,s) );
 	glEnd();
 } 
 
 void	FbxViewer::DrawPoint(const Vector4& c, float s) {
-    DrawPoint(fbxvec3(c[0],c[1],c[2]),s);
+    DrawPoint(Vector3(c[0],c[1],c[2]),s);
 }
 void	FbxViewer::MeshDrawWeightMap(const FbxScene* scn, const Model* mdl, const Mesh*msh, const Matrix& mat)
 {
@@ -74,7 +74,7 @@ void	FbxViewer::MeshDrawWeightMap(const FbxScene* scn, const Model* mdl, const M
         for (k=0; k<3; k++)
         {
             int	vi=tri.vertex[k];
-            auto weightColor=fbxvec4(0.f,0.f,0.f,0.f);
+            auto weightColor=Vector4(0.f,0.f,0.f,0.f);
             int	bii;
             auto & wmap=msh->vertexWeightMap;
             for (bii=0; bii<wmap[vi].size(); bii++) {
@@ -179,7 +179,7 @@ FbxViewer::DrawCubePoints(float f)
 	float s;
 	for (int i=0; i<8; i++) 
 	{
-        auto pos=fbxvec3 ((i&1)?f:-f, (i&2)?f:-f, (i&4)?f:-f) ;
+        auto pos=Vector3 ((i&1)?f:-f, (i&2)?f:-f, (i&4)?f:-f) ;
         DrawPoint( pos, f*0.05);
 	}
 }

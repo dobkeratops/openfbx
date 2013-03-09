@@ -17,12 +17,10 @@ void	FbxScene::PostLoadingSetup()
 }
 float FbxScene::Radius()const
 {
-    auto size=extents.max-extents.min;
+    auto size=extents.size();
     return sqrt(size|size)*0.5f;
 }
-FBXM::Vector3 FbxScene::Centre() const{
-    return (extents.min+extents.max)*0.5f;
-}
+auto FbxScene::Centre() const->Vector3{ return extents.centre();}
 
 float FbxScene::Model::GetChannel(Channel_t c) const{
 	int ci=c % 3;
@@ -30,20 +28,20 @@ float FbxScene::Model::GetChannel(Channel_t c) const{
 	const Vector3* src=(cn==0)?&this->localTranslate:(cn==1)?&this->localRotate:&this->localScale;
 	return	 (*src)[ci];
 }
-void
-FbxScene::Model::CalcLocalMatrixFromSRT()
+
+void FbxScene::Model::CalcLocalMatrixFromSRT()
 {
     this->localMatrix = Matrix::Srt(this->localScale, this->localRotate, this->localTranslate);
 }
 
-FbxScene::Matrix
-FbxScene::Model::GetGlobalMatrix() const {
+auto FbxScene::Model::GetGlobalMatrix() const -> Matrix
+{
     if (!parent) return this->localMatrix;
     else
         return this->parent->GetGlobalMatrix() * this->localMatrix;
 }
 
-FbxScene::Mesh*	FbxScene::CreateMeshForModel(Model*	mdl)
+auto FbxScene::CreateMeshForModel(Model*	mdl) ->Mesh*
 {
     //mdl->meshId = this->meshes.size();
     //auto mesh=fbxAppend(this->meshes,1);
@@ -69,10 +67,10 @@ FbxScene::UpdateExtents(Extents3& dst,const Model* mdl, const Matrix& parentMat)
 }
 
 FbxMath::Vector4	FbxScene::s_WeightMapColors[4]= {
-    fbxvec4(1.f,0.0f,0.5f,1.f),
-    fbxvec4(0.5f,1.f,0.f,1.f),
-    fbxvec4(0.f,0.5f,1.f,1.f),
-    fbxvec4(0.f,1.f,0.5f,1.f),
+    Vector4(1.f,0.0f,0.5f,1.f),
+    Vector4(0.5f,1.f,0.f,1.f),
+    Vector4(0.f,0.5f,1.f,1.f),
+    Vector4(0.f,1.f,0.5f,1.f),
 };
 
 FbxScene::Model::Model()
@@ -108,7 +106,7 @@ const char* FbxScene::s_ChannelNames[]=
 	0,
 };
 
-FbxScene::Channel_t FbxScene::GetChannelIndex(const char* name) {
+auto FbxScene::GetChannelIndex(const char* name) ->Channel_t{
 	const char** src;
 	int	id=0;
     for (src=s_ChannelNames; *src; src++,id++)
@@ -118,11 +116,11 @@ FbxScene::Channel_t FbxScene::GetChannelIndex(const char* name) {
 }
 
 
-FbxScene::Matrix	FbxScene::Model::GetLocalMatrix()  const
+auto FbxScene::Model::GetLocalMatrix()  const->Matrix
 {
 	return	this->localMatrix;
 }
-FbxScene::Matrix	FbxScene::Model::GetLocalMatrixPermuteTest(int permute)  const
+auto FbxScene::Model::GetLocalMatrixPermuteTest(int permute)  const->Matrix
 {
 	int	n=permute;
     FbxScene::Matrix	rot;
@@ -156,7 +154,7 @@ FbxScene::Take::Setup(){
     this->maxt=0.f;
     for (auto& cv:curves)
         if (cv.points.size())
-            this->maxt=max(this->maxt,cv.points.end()[-1].t);
+            this->maxt=std::max(this->maxt,cv.points.end()[-1].t);
 }
 
 void
@@ -226,7 +224,7 @@ FbxScene::EvalMatrixArray(Matrix* dst, const CycleEvalBuffer* src) const
 
     int	i;
     for (i=0; i<num; i++) {
-        EvalSRT(&lcl[i], &(*src)[i][0]);
+        lcl[i].SetSRT(&(*src)[i][0]);
     }
     // todo: root model list
     for (i=0; i<num ;i++) {
@@ -297,7 +295,7 @@ FbxScene::Dump(IWriter* out)
     out->beginMap();
     out->keyValue("min",scn->extents.min);
     out->keyValue("max",scn->extents.max);
-    auto    ident=FBXM::Matrix::Identity();
+    auto    ident=Matrix::Identity();
     out->keyValue("numRootModels",(int)scn->rootModels.size());
     out->beginKeyValue("modelNames");
     out->beginArray(scn->allModels.size());
@@ -368,7 +366,7 @@ FbxScene::Mesh::MakeRenderable()
         RenderVertexTmp* next=0;
         int outputIndex=-1;
         int pos;
-        array<Vector2,MaxUVLayers> tex;
+        std::array<Vector2,MaxUVLayers> tex;
         RenderVertexTmp(){
             for (auto& t:this->tex)
             {t[0]=0.f;t[1]=0.f;}
@@ -385,15 +383,15 @@ FbxScene::Mesh::MakeRenderable()
     };
 
     // create unique polygon-vertex array.
-    vector<RenderVertexTmp*> rvtPerVertex;
-    vector<RenderVertexTmp*> output;
+    std::vector<RenderVertexTmp*> rvtPerVertex;
+    std::vector<RenderVertexTmp*> output;
     rvtPerVertex.resize(this->Vertices.size());
     fill_n(rvtPerVertex.begin(),this->Vertices.size(),nullptr);
 
     ASSERT(this->LayerElementUVs.size()<MaxUVLayers && "uv layers exceeded");
 
     // [1] Create polygon render vertices
-    vector<RenderVertexTmp> polygonRenderVertex;
+    std::vector<RenderVertexTmp> polygonRenderVertex;
     polygonRenderVertex.resize(this->PolygonVertexIndex.size());
 
     size_t i,layer;
@@ -413,7 +411,7 @@ FbxScene::Mesh::MakeRenderable()
     }
 
     // [2] find unique ones & make translation table
-    vector<int> renderVertexIndex;
+    std::vector<int> renderVertexIndex;
     renderVertexIndex.resize(this->PolygonVertexIndex.size());
     fill_n(renderVertexIndex.begin(),renderVertexIndex.size(),-1);
 
@@ -496,8 +494,8 @@ FbxScene::Mesh::MakeRenderable()
 }
 
 
-FbxScene::Model*
-FbxScene::GetModel(const char* mdlName)
+auto
+FbxScene::GetModel(const char* mdlName)->Model*
 {
 
     for(auto mp :allModels)
@@ -506,8 +504,8 @@ FbxScene::GetModel(const char* mdlName)
     return  nullptr;
 }
 
-int
-FbxScene::GetIndexOfModel(const char* mdlName)
+auto
+FbxScene::GetIndexOfModel(const char* mdlName)->int
 {
     int i=0;
     for (auto pm :allModels)

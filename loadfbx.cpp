@@ -214,8 +214,6 @@ public:
         }
     }
 
-
-
     void	LoadModelProperties(Model* mdl)
     {
         for (auto pm=Model::s_Properties; pm->name; pm++)
@@ -228,7 +226,6 @@ public:
                 file>>name>>type>>unknown;
                 if (name=="Lcl Translation") {
                     file>>mdl->localTranslate;
-
                 } else
                 if (name=="Lcl Rotation") {
                     file>>mdl->localRotate;
@@ -281,7 +278,6 @@ public:
                     }else BlockUnused(hdr);
                 }
             }
-
             else if (hdr=="LayerElementUV:")
             {
                 auto layerId = file.Read<int>();

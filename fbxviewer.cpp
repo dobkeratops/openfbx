@@ -1,7 +1,6 @@
 #include "fbxviewer.h"
 using namespace std;
 
-#ifdef FBXVIEWER_MAIN
 int	FbxViewer::s_PermuteSrt=21;
 
 void	FbxViewer::glVertex(const Vertex& v)
@@ -322,4 +321,3 @@ int main(int argc, const char** argv)
 
 	glutMainLoop();
 }
-#endif

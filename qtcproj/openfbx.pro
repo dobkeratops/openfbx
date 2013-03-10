@@ -9,11 +9,7 @@ QMAKE_CXXFLAGS_WARN_ON +=\
 	-Wno-unused-function\
 	-Wno-char-subscripts\
 
-DEFINES += LINUX
-DEFINES += FBXVIEWER_MAIN
 LIBS += -lGLU -lXext -lGL -lglut
-DESTDIR = build/debug
-OBJECTS_DIR = build/debug/obj
 TARGET = loadfbx	
 
 SOURCES += ../*.cpp

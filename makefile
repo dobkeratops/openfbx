@@ -1,5 +1,4 @@
-UNAME=$(shell uname)
-ifeq ($(UNAME),Darwin)
+ifeq ($(shell uname),Darwin)
 	LDFLAGS=-framework Carbon -framework OpenGL -framework GLUT
 	CXX = clang++ -std=c++11 -stdlib=libc++
 else

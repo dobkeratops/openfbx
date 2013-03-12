@@ -5,6 +5,11 @@ else
 	LDFLAGS= -lGL -lglut
 	CXX = clang++ -std=c++11
 endif
-all:
-	$(CXX) *.cpp -I../ut -I../gfx -o loadfbx $(LDFLAGS)
-	./loadfbx data/test.fbx
+TARGET=loadfbx
+
+$(TARGET):
+	$(CXX) *.cpp -I../ut -I../gfx -o $(TARGET) $(LDFLAGS)
+	./$(TARGET) data/test.fbx
+clean:
+	rm -f *.o
+	rm $(TARGET)

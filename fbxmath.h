@@ -54,7 +54,8 @@ public:
         inline Vec<T,N>& operator+=(const Vec<T,N>& v)  { for (int i=0;i<N;i++) data[i]+=v[i]; return *this; }
         inline Vec<T,N>& operator-=(const Vec<T,N>& v)  { for (int i=0;i<N;i++) data[i]-=v[i]; return *this; }
         inline Vec<T,N>& operator/=(const Vec<T,N>& v)  { for (int i=0;i<N;i++) data[i]/=v[i]; return *this; }
-        inline T length()const              { return sqrt(*this|*this);}
+	inline T lengthSquared()const	{return *this|*this;}
+        inline T length()const              { return this->lengthSquared();}
         inline Vec<T,N>	normalized() const  {return (*this)*(1.f/this->length());}
         inline bool operator==(const Vec<T,N>& b) const { for (int i=0; i<N;i++) {if (data[i]!=b[i]) return false;}return true;}
         inline bool operator!=(const Vec<T,N>& b) const { return !operator==(b);}

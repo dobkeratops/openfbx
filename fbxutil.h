@@ -13,7 +13,6 @@
     #define ASSERT(x) { if (!(x)) { fbx_printf("failed %s:%d %s",__FILE__,__LINE__,#x); }}
 #endif
 
-
 template<typename T, typename... Args>
 std::unique_ptr<T> fbxMakeUnique(Args&&... args)
 {

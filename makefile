@@ -5,12 +5,15 @@ else
 	LDFLAGS= -lGL -lglut
 	CXX = clang++ -std=c++11
 endif
-TARGET=loadfbx
 
+TARGET=loadfbx
 SRC=$(wildcard ./*.cpp)
+SRC_H=$(wildcard ./*.h)
+
 OBJ=$(SRC:.cpp=.o)
-$(TARGET): $(OBJ)
-	$(CXX) $^ -I../ut -I../gfx -o $@ $(LDFLAGS)
+
+$(TARGET): $(OBJ) $(SRC_H)
+	$(CXX) -o $@ $(SRC) -I../ut -I../gfx $(LDFLAGS)
 	./$@ data/test.fbx
 clean:
 	rm -f *.o

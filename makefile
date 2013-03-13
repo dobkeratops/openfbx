@@ -7,9 +7,11 @@ else
 endif
 TARGET=loadfbx
 
-$(TARGET):
-	$(CXX) *.cpp -I../ut -I../gfx -o $(TARGET) $(LDFLAGS)
-	./$(TARGET) data/test.fbx
+SRC=$(wildcard ./*.cpp)
+OBJ=$(SRC:.cpp=.o)
+$(TARGET): $(OBJ)
+	$(CXX) $^ -I../ut -I../gfx -o $@ $(LDFLAGS)
+	./$@ data/test.fbx
 clean:
 	rm -f *.o
 	rm $(TARGET)
